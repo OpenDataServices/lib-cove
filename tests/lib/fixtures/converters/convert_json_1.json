@@ -1,0 +1,13 @@
+{
+  "version": "1.1",
+  "uri": "https://github.com/open-contracting/sample-data/raw/1.1/fictional-example/ocds-213czf-000-00001-01-planning.json",
+  "publishedDate": "2009-03-15T14:45:00Z",
+  "publisher": {
+    "name": "Open Data Services Co-operative Limited",
+    "scheme": "GB-COH",
+    "uid": "9506232.0",
+    "uri": "http://data.companieshouse.gov.uk/doc/company/09506232"
+  },
+  "license": "http://opendatacommons.org/licenses/pddl/1.0/",
+  "publicationPolicy": "https://github.com/open-contracting/sample-data/"
+}
