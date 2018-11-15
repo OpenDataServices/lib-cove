@@ -83,6 +83,8 @@ def convert_spreadsheet(upload_dir, upload_url, file_name, file_type, lib_cove_c
             'schema': schema_url,
             'convert_titles': True,
             'root_id': lib_cove_config.config['root_id'],
+            'root_is_list': lib_cove_config.config.get('root_is_list', False),
+            'id_name': lib_cove_config.config.get('id_name', None),
         })
 
     conversion_warning_cache_path = os.path.join(upload_dir, 'conversion_warning_messages.json')

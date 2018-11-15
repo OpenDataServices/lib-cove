@@ -5,6 +5,7 @@ LIB_COVE_CONFIG_DEFAULT = {
     },
     'root_list_path': 'main',
     'root_id': 'main',
+    'root_is_list': False,
     'id_name': 'id',
     'convert_titles': False,
 }

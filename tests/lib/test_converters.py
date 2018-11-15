@@ -1,7 +1,7 @@
 import tempfile
 import os
 import json
-from libcove.lib.converters import convert_json
+from libcove.lib.converters import convert_json, convert_spreadsheet
 from libcove.config import LibCoveConfig
 
 
@@ -13,7 +13,6 @@ def test_convert_json_1():
     )
 
     lib_cove_config = LibCoveConfig()
-    print(cove_temp_folder)
     output = convert_json(cove_temp_folder, "", json_filename, lib_cove_config, flatten=True)
 
     assert output['converted_url'] == '/flattened'
@@ -27,3 +26,36 @@ def test_convert_json_1():
     assert conversion_warning_messages_data == []
 
     assert os.path.isfile(os.path.join(cove_temp_folder, "flattened", "main.csv"))
+
+
+def test_convert_csv_1():
+
+    cove_temp_folder = tempfile.mkdtemp(prefix='lib-cove-ocds-tests-', dir=tempfile.gettempdir())
+    csv_filename = os.path.join(os.path.dirname(
+        os.path.realpath(__file__)), 'fixtures', 'converters', 'convert_csv_1.csv'
+    )
+    csv_schema_filename = os.path.join(os.path.dirname(
+        os.path.realpath(__file__)), 'fixtures', 'converters', 'convert_csv_1_schema.json'
+    )
+
+    lib_cove_config = LibCoveConfig()
+    lib_cove_config.config['id_name'] = 'thing_id'
+    lib_cove_config.config['root_is_list'] = True
+
+    output = convert_spreadsheet(cove_temp_folder, "", csv_filename, 'csv', lib_cove_config, schema_url=csv_schema_filename) # noqa
+
+    assert output['conversion'] == 'unflatten'
+
+    with open(output['converted_path']) as fp:
+        json_data = json.load(fp)
+
+    assert json_data == [
+            {
+                "thing_id": "1",
+                "title": "Cat"
+            },
+            {
+                "thing_id": "2",
+                "title": "Hat"
+            }
+        ]
