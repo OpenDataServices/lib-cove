@@ -8,6 +8,10 @@
     "uid": "9506232.0",
     "uri": "http://data.companieshouse.gov.uk/doc/company/09506232"
   },
+  "main": [
+    { "id":1, "title":"Cat" },
+    { "id":2, "title":"Hat" }
+  ],
   "license": "http://opendatacommons.org/licenses/pddl/1.0/",
   "publicationPolicy": "https://github.com/open-contracting/sample-data/"
 }
