@@ -186,6 +186,11 @@ def schema_dict_fields_generator(schema_dict):
                     for field in fields:
                         yield '/' + property_name + field
                 yield '/' + property_name
+    if 'items' in schema_dict and isinstance(schema_dict['items'], dict):
+        if 'oneOf' in schema_dict['items'] and isinstance(schema_dict['items']['oneOf'], list):
+            for oneOf in schema_dict['items']['oneOf']:
+                for field in schema_dict_fields_generator(oneOf):
+                    yield field
 
 
 def get_schema_codelist_paths(schema_obj, obj=None, current_path=(), codelist_paths=None, use_extensions=False):
@@ -805,19 +810,22 @@ def _get_schema_non_required_ids(schema_obj, obj=None, current_path=(), id_paths
 
 
 def fields_present_generator(json_data, prefix=''):
-    if not isinstance(json_data, dict):
-        return
-    for key, value in json_data.items():
-        if isinstance(value, list):
-            for item in value:
-                if isinstance(item, dict):
-                    yield from fields_present_generator(item, prefix + '/' + key)
-            yield prefix + '/' + key
-        elif isinstance(value, dict):
-            yield from fields_present_generator(value, prefix + '/' + key)
-            yield prefix + '/' + key
-        else:
-            yield prefix + '/' + key
+    if isinstance(json_data, dict):
+        for key, value in json_data.items():
+            if isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        yield from fields_present_generator(item, prefix + '/' + key)
+                yield prefix + '/' + key
+            elif isinstance(value, dict):
+                yield from fields_present_generator(value, prefix + '/' + key)
+                yield prefix + '/' + key
+            else:
+                yield prefix + '/' + key
+    elif isinstance(json_data, list):
+        for item in json_data:
+            if isinstance(item, dict):
+                yield from fields_present_generator(item, prefix)
 
 
 def add_is_codelist(obj):

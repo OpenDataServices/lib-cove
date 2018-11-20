@@ -111,6 +111,20 @@ def test_schema_dict_fields_generator_release_schema_deprecated_fields():
     assert data[10] == '/tender'
 
 
+def test_schema_dict_fields_generator_schema_with_list_and_oneof():
+
+    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fixtures', 'common',
+                           'schema_with_list_and_oneof.json')) as fp:  # noqa
+        json_schema = json.load(fp)
+
+    data = sorted(set(schema_dict_fields_generator(json_schema)))
+
+    assert data == ['/dissolutionDate', '/entityType', '/names', '/names/familyName', '/names/fullName',
+                    '/names/givenName', '/names/patronymicName', '/names/type', '/source', '/source/assertedBy',
+                    '/source/assertedBy/name', '/source/assertedBy/uri', '/source/description', '/source/retrievedAt',
+                    '/source/type', '/source/url']
+
+
 def test_fields_present_generator_tenders_releases_2_releases():
 
     with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fixtures', 'common',
@@ -135,3 +149,21 @@ def test_fields_present_generator_tenders_releases_2_releases():
                     '/releases/tender/procuringEntity/name',
                     '/releases/tender/procuringEntity/name_fr', '/releases/tender/tenderPeriod',
                     '/releases/tender/tenderPeriod/endDate', '/uri']
+
+
+def test_fields_present_generator_data_root_is_list():
+
+    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fixtures', 'common',
+                           'data_root_is_list.json')) as fp:  # noqa
+        json_schema = json.load(fp)
+
+    data = sorted(set(fields_present_generator(json_schema)))
+
+    assert data == ['/addresses', '/addresses/address', '/addresses/country', '/addresses/postCode', '/addresses/type',
+                    '/birthDate', '/entityType', '/foundingDate', '/identifiers', '/identifiers/id',
+                    '/identifiers/scheme', '/interestedParty', '/interestedParty/describedByPersonStatement',
+                    '/interests', '/interests/beneficialOwnershipOrControl', '/interests/interestLevel',
+                    '/interests/share', '/interests/share/exact', '/interests/startDate', '/interests/type', '/name',
+                    '/names', '/names/familyName', '/names/fullName', '/names/givenName', '/names/type',
+                    '/nationalities', '/nationalities/code', '/personType', '/statementDate', '/statementID',
+                    '/statementType', '/subject', '/subject/describedByEntityStatement']
