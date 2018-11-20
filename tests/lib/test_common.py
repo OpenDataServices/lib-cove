@@ -3,7 +3,7 @@ import os
 from collections import OrderedDict
 from libcove.lib.common import SchemaJsonMixin, \
     get_json_data_generic_paths, get_json_data_deprecated_fields, get_fields_present, \
-    _get_schema_deprecated_paths
+    _get_schema_deprecated_paths, schema_dict_fields_generator, fields_present_generator
 
 
 def test_get_json_data_deprecated_fields():
@@ -86,3 +86,52 @@ def test_get_schema_deprecated_paths():
     assert len(deprecated_paths) == 6
     for path in expected_results:
         assert path in deprecated_paths
+
+
+def test_schema_dict_fields_generator_release_schema_deprecated_fields():
+
+    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fixtures', 'common',
+                           'release_schema_deprecated_fields.json')) as fp:  # noqa
+        json_schema = json.load(fp)
+
+    data = sorted(set(schema_dict_fields_generator(json_schema)))
+
+    assert 11 == len(data)
+
+    assert data[0] == '/awards'
+    assert data[1] == '/buyer'
+    assert data[2] == '/contracts'
+    assert data[3] == '/date'
+    assert data[4] == '/id'
+    assert data[5] == '/initiationType'
+    assert data[6] == '/language'
+    assert data[7] == '/ocid'
+    assert data[8] == '/planning'
+    assert data[9] == '/tag'
+    assert data[10] == '/tender'
+
+
+def test_fields_present_generator_tenders_releases_2_releases():
+
+    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fixtures', 'common',
+                           'tenders_releases_2_releases.json')) as fp:  # noqa
+        json_schema = json.load(fp)
+
+    data = sorted(set(fields_present_generator(json_schema)))
+
+    assert data == ['/license', '/publishedDate', '/publisher', '/publisher/name', '/publisher/scheme',
+                    '/publisher/uid',
+                    '/publisher/uri', '/releases', '/releases/buyer', '/releases/buyer/name', '/releases/date',
+                    '/releases/id',
+                    '/releases/initiationType', '/releases/language', '/releases/ocid', '/releases/tag',
+                    '/releases/tender',
+                    '/releases/tender/awardCriteriaDetails', '/releases/tender/documents',
+                    '/releases/tender/documents/id',
+                    '/releases/tender/documents/url', '/releases/tender/id', '/releases/tender/items',
+                    '/releases/tender/items/classification', '/releases/tender/items/classification/description',
+                    '/releases/tender/items/classification/scheme', '/releases/tender/items/description',
+                    '/releases/tender/items/id',
+                    '/releases/tender/methodRationale', '/releases/tender/procuringEntity',
+                    '/releases/tender/procuringEntity/name',
+                    '/releases/tender/procuringEntity/name_fr', '/releases/tender/tenderPeriod',
+                    '/releases/tender/tenderPeriod/endDate', '/uri']
