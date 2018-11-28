@@ -3,7 +3,7 @@ import os
 from collections import OrderedDict
 from libcove.lib.common import SchemaJsonMixin, \
     get_json_data_generic_paths, get_json_data_deprecated_fields, get_fields_present, \
-    _get_schema_deprecated_paths, schema_dict_fields_generator, fields_present_generator
+    _get_schema_deprecated_paths, schema_dict_fields_generator, fields_present_generator, get_orgids_prefixes
 
 
 def test_get_json_data_deprecated_fields():
@@ -167,3 +167,10 @@ def test_fields_present_generator_data_root_is_list():
                     '/names', '/names/familyName', '/names/fullName', '/names/givenName', '/names/type',
                     '/nationalities', '/nationalities/code', '/personType', '/statementDate', '/statementID',
                     '/statementType', '/subject', '/subject/describedByEntityStatement']
+
+
+def test_get_orgids_prefixes_live():
+    data = get_orgids_prefixes()
+
+    # There is not much we can really test here, as the results will depend on the live data!
+    assert len(data) > 150
