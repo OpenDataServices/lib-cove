@@ -72,11 +72,11 @@ def convert_spreadsheet(upload_dir, upload_url, file_name, file_type, lib_cove_c
     }
 
     if lib_cove_config.config.get('hashcomments'):
-        flattentool_options['default_lib_cove_config.configuration'] += ',hashcomments'
+        flattentool_options['default_configuration'] += ',hashcomments'
 
     if xml:
         flattentool_options['xml'] = True
-        flattentool_options['default_lib_cove_config.configuration'] += ',IDName {}'.format(lib_cove_config.config.get('id_name', 'id')) # noqa
+        flattentool_options['default_configuration'] += ',IDName {}'.format(lib_cove_config.config.get('id_name', 'id')) # noqa
         flattentool_options['xml_schemas'] = xml_schemas
     else:
         flattentool_options.update({
