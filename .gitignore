@@ -1,4 +1,5 @@
 /.idea
 /.ve
 __pycache__
-
+/libcove/lib/org-ids.json
+/libcove/lib/org-ids.json.lock
