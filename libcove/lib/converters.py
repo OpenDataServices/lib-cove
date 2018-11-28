@@ -78,6 +78,9 @@ def convert_spreadsheet(upload_dir, upload_url, file_name, file_type, lib_cove_c
         flattentool_options['xml'] = True
         flattentool_options['default_configuration'] += ',IDName {}'.format(lib_cove_config.config.get('id_name', 'id')) # noqa
         flattentool_options['xml_schemas'] = xml_schemas
+        if lib_cove_config.config['flatten_tool'].get('xml_comment'):
+            flattentool_options['xml_comment'] = lib_cove_config.config['flatten_tool'].get('xml_comment')
+
     else:
         flattentool_options.update({
             'schema': schema_url,

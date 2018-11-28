@@ -2,6 +2,7 @@ LIB_COVE_CONFIG_DEFAULT = {
     'flatten_tool': {
         'disable_local_refs': True,
         'remove_empty_schema_columns': True,
+        'xml_comment': None,
     },
     'root_list_path': 'main',
     'root_id': 'main',
