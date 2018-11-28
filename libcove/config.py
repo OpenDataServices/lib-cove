@@ -8,6 +8,7 @@ LIB_COVE_CONFIG_DEFAULT = {
     'root_is_list': False,
     'id_name': 'id',
     'convert_titles': False,
+    'xml_comment': None,
 }
 
 
