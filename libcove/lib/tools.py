@@ -74,8 +74,8 @@ def get_file_type(file_name):
     """ Takes an filename (type string), and returns a string saying what type it is."""
     # Older versions of this could take DJango objects to.
     # Tho we don't really want to support that, put in a check for that.
-    if not isinstance(file_name, str):
-        file_name = file_name.name
+    if not isinstance(file_name, str) and hasattr(file_name, 'path'):
+        file_name = file_name.path
     # First, just check the extension on the file name
     if file_name.lower().endswith('.json'):
         return 'json'

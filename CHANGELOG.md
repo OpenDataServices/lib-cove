@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.3.1] - 2018-11-30
+
+### Fixed
+
+- get_file_type fix - when passed a Django file object to a JSON file without the .json extension, will detect as 'json'
+
 ## [0.3.0] - 2018-11-28
 
 ### Added
