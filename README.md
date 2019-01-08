@@ -1,14 +1,9 @@
-# Lib Cove OCDS
+# Lib CoVE
 
-## Command line
+This library contains code that can be reused by standard-specific tooling for data review and validation.
 
-Call `libcoveocds` and pass the filename of some JSON data.
+## Used by
 
-    libcoveocds tests/fixtures/common_checks/basic_1.json
-
-## Code for use by external users
-
-The only code that should be used directly by users is the `libcoveocds.config` and `libcoveocds.api` modules.
-
-Other code ( Code in `libcore`, `lib`, etc) 
-should not be used by external users of this library directly, as the structure and use of these may change more frequently.
+* [lib-cove-web](https://github.com/OpenDataServices/lib-cove-web/): Common django components for instantiating CoVE web applications
+* [lib-cove-bods](http://github.com/openownership/lib-cove-bods/): Beneficial Ownership Data Standard data review tool
+* [lib-cove-ocds](https://github.com/open-contracting/lib-cove-ocds): Open Contracting Data Standard data review tool
