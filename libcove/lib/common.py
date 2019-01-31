@@ -95,6 +95,17 @@ def oneOf_draft4(validator, oneOf, instance, schema):
         if not errs:
             first_valid = subschema
             break
+        properties = subschema.get('properties', {})
+        if 'statementType' in instance and 'statementType' in properties:
+            print(properties['statementType'])
+            if [instance['statementType']] == properties['statementType'].get('enum', []):
+                for err in errs:
+                    yield err
+                # FIXME
+                first_valid = None
+                break
+        # Need to handle:
+        # * Meaningful mesage when 'statementType' is missing, or does not match any enums
         all_errors.extend(errs)
     else:
         yield ValidationError(
