@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Return specific validation errors for `oneOf`, by using `statementType` to pick the correct sub-schema. Only works for BODS.
+
 ## [0.3.1] - 2018-11-30
 
 ### Fixed
