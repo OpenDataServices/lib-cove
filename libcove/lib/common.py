@@ -90,29 +90,46 @@ def oneOf_draft4(validator, oneOf, instance, schema):
     """
     subschemas = enumerate(oneOf)
     all_errors = []
+    validStatementTypes = []
     for index, subschema in subschemas:
         errs = list(validator.descend(instance, subschema, schema_path=index))
         if not errs:
             first_valid = subschema
             break
         properties = subschema.get('properties', {})
-        if 'statementType' in instance and 'statementType' in properties:
-            print(properties['statementType'])
-            if [instance['statementType']] == properties['statementType'].get('enum', []):
-                for err in errs:
-                    yield err
-                # FIXME
-                first_valid = None
+        if'statementType' in properties:
+            if 'statementType' in instance:
+                try:
+                    validStatementType = properties['statementType'].get('enum', [])[0]
+                except IndexError:
+                    continue
+                if instance['statementType'] == validStatementType:
+                    for err in errs:
+                        yield err
+                    return
+                else:
+                    validStatementTypes.append(validStatementType)
+            else:
+                yield ValidationError(
+                    'statementType',
+                    validator='required',
+                )
                 break
-        # Need to handle:
-        # * Meaningful mesage when 'statementType' is missing, or does not match any enums
         all_errors.extend(errs)
     else:
-        yield ValidationError(
-            "%s is not valid under any of the given schemas" % (
-                json.dumps(instance, sort_keys=True, default=decimal_default),),
-            context=all_errors,
-        )
+        if validStatementTypes:
+            yield ValidationError(
+                'Invalid code found in statementType',
+                instance=instance['statementType'],
+                path=('statementType',),
+                validator='enum',
+            )
+        else:
+            yield ValidationError(
+                "%s is not valid under any of the given schemas" % (
+                    json.dumps(instance, sort_keys=True, default=decimal_default),),
+                context=all_errors,
+            )
 
     more_valid = [s for i, s in subschemas if validator.is_valid(instance, s)]
     if more_valid:
