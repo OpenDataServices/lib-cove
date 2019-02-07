@@ -86,7 +86,13 @@ def oneOf_draft4(validator, oneOf, instance, schema):
     """
     oneOf_draft4 validator from
     https://github.com/Julian/jsonschema/blob/d16713a4296663f3d62c50b9f9a2893cb380b7af/jsonschema/_validators.py#L337
-    patched to sort the instance.
+
+    Modified to:
+    - sort the instance JSON, so we get a reproducible output that we
+      can can test more easily
+    - If `statementType` is available, use that pick the correct
+      sub-schema, and to yield those ValidationErrors. (Only
+      applicable for BODS).
     """
     subschemas = enumerate(oneOf)
     all_errors = []
