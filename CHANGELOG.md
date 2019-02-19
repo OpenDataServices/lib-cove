@@ -9,7 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- Return specific validation errors for `oneOf`, by using `statementType` to pick the correct sub-schema. Only works for BODS.
+- Return specific validation errors for `oneOf`, by using `statementType` to pick the correct sub-schema. Only works for BODS. [#16](https://github.com/openownership/cove-bods/issues/16)
+
+### Changed
+
+- Reword and add some HTML tags to validation error messages, for BODS [#16](https://github.com/openownership/cove-bods/issues/16#issuecomment-465055911)
 
 ## [0.3.1] - 2018-11-30
 
