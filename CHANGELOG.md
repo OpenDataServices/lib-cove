@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Require jsonschema version before 2.7
+- Put validator type into the context https://github.com/OpenDataServices/cove/issues/1117
+
 ## [0.3.1] - 2018-11-30
 
 ### Fixed
