@@ -11,7 +11,7 @@ setup(
     long_description='A data review library',
     install_requires=[
         'jsonref',
-        'jsonschema',
+        'jsonschema<2.7',
         'CommonMark',
         'Django',
         'bleach',
