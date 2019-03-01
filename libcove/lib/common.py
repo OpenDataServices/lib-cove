@@ -553,6 +553,7 @@ def get_schema_validation_errors(json_data, schema_obj, schema_name, cell_src_ma
             message_safe = escape(message)
 
         unique_validator_key = {
+            'validator': e.validator,
             'message_type': validator_type,
             'message': message,
             'message_safe': conditional_escape(message_safe),
