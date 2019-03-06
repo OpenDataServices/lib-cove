@@ -17,7 +17,7 @@ def filter_conversion_warnings(conversion_warnings):
         if w.category is flattentool.exceptions.DataErrorWarning:
             out.append(str(w.message))
         else:
-            logger.warn(w)
+            logger.warning(w)
     return out
 
 
