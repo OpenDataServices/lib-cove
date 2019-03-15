@@ -5,12 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.0] - 2019-03-14
 
 ### Changed
 
 - Require jsonschema version before 2.7
 - Put validator type into the context https://github.com/OpenDataServices/cove/issues/1117
+
+### Fixed
+- filter_conversion_warnings in converters.py - fix deprecation of logger.warn to logger.warning.
 
 ## [0.3.1] - 2018-11-30
 
