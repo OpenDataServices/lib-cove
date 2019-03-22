@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='libcove',
-    version='0.3.1',
+    version='0.4.0',
     author='Open Data Services',
     author_email='code@opendataservices.coop',
     url='https://github.com/OpenDataServices/lib-cove',
@@ -11,7 +11,7 @@ setup(
     long_description='A data review library',
     install_requires=[
         'jsonref',
-        'jsonschema<=2.6.0',
+        'jsonschema<2.7',
         'CommonMark',
         'Django',
         'bleach',
