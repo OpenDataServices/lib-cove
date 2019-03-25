@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Return specific validation errors for `oneOf`, by using `statementType` to pick the correct sub-schema. Only works for BODS. [#16](https://github.com/openownership/cove-bods/issues/16)
+
 ## [0.4.0] - 2019-03-14
 
 ### Changed
