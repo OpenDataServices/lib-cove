@@ -29,23 +29,29 @@ validator = jsonschema.validators.extend(jsonschema.validators.Draft4Validator, 
 
 uniqueItemsValidator = validator.VALIDATORS.pop("uniqueItems")
 LANGUAGE_RE = re.compile("^(.*_(((([A-Za-z]{2,3}(-([A-Za-z]{3}(-[A-Za-z]{3}){0,2}))?)|[A-Za-z]{4}|[A-Za-z]{5,8})(-([A-Za-z]{4}))?(-([A-Za-z]{2}|[0-9]{3}))?(-([A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*(-([0-9A-WY-Za-wy-z](-[A-Za-z0-9]{2,8})+))*(-(x(-[A-Za-z0-9]{1,8})+))?)|(x(-[A-Za-z0-9]{1,8})+)))$") # noqa
-validation_error_template_lookup = {'date-time': 'Date is not in the correct format',
-                           'uri': 'Invalid \'uri\' found',
-                           'string': '\'{}\' is not a string. Check that the value {} has quotes at the start and end. Escape any quotes in the value with \'\\\'', # noqa
-                           'integer': '\'{}\' is not a integer. Check that the value {} doesn’t contain decimal points or any characters other than 0-9. Integer values should not be in quotes. ', # noqa
-                           'number': '\'{}\' is not a number. Check that the value {} doesn’t contain any characters other than 0-9 and dot (\'.\'). Number values should not be in quotes. ', # noqa
-                           'object': '\'{}\' is not a JSON object',
-                           'array': '\'{}\' is not a JSON array'}
+validation_error_template_lookup = {
+    'date': 'Date is not in the correct format. The correct format is YYYY-MM-DD.',
+    'date-time': 'Date is not in the correct format. The correct format is YYYY-MM-DDThh:mm:ssZ.',
+    'uri': 'Invalid uri found',
+    'string': '\'{}\' should be a string. Check that the value {} has quotes at the start and end. Escape any quotes in the value with \'\\\'', # noqa
+    'integer': '\'{}\' should be an integer. Check that the value {} doesn’t contain decimal points or any characters other than 0-9. Integer values should not be in quotes. ', # noqa
+    'number': '\'{}\' should be a number. Check that the value {} doesn’t contain any characters other than 0-9 and dot (\'.\'). Number values should not be in quotes. ', # noqa
+    'boolean': '\'{}\' should be a JSON boolean, \'true\' or \'false\'.', # noqa
+    'object': '\'{}\' should be a JSON object',
+    'array': '\'{}\' should be a JSON array. Check that value(s) appear within square brackets, [...]'}
 # These are "safe" html that we trust
 # Don't insert any values into these strings without ensuring escaping
 # e.g. using django's format_html function.
-validation_error_template_lookup_safe = {'date-time': 'Date is not in the correct format',
-                           'uri': 'Invalid \'uri\' found',
-                           'string': '<code>{}</code> is not a string. Check that the value {} has quotes at the start and end. Escape any quotes in the value with <code>\</code>', # noqa
-                           'integer': '<code>{}</code> is not a integer. Check that the value {} doesn’t contain decimal points or any characters other than 0-9. Integer values should not be in quotes. ', # noqa
-                           'number': '<code>{}</code> is not a number. Check that the value {} doesn’t contain any characters other than 0-9 and dot (<code>.</code>). Number values should not be in quotes. ', # noqa
-                           'object': '<code>{}</code> is not a JSON object',
-                           'array': '<code>{}</code> is not a JSON array'}
+validation_error_template_lookup_safe = {
+    'date': 'Date is not in the correct format. The correct format is YYYY-MM-DD.',
+    'date-time': 'Date is not in the correct format. The correct format is YYYY-MM-DDT00:00:00Z.',
+    'uri': 'Invalid uri found',
+    'string': '<code>{}</code> should be a string. Check that the value {} has quotes at the start and end. Escape any quotes in the value with <code>\</code>', # noqa
+    'integer': '<code>{}</code> should be an integer. Check that the value {} doesn’t contain decimal points or any characters other than 0-9. Integer values should not be in quotes. ', # noqa
+    'number': '<code>{}</code> should be a number. Check that the value {} doesn’t contain any characters other than 0-9 and dot (<code>.</code>). Number values should not be in quotes. ', # noqa
+    'boolean': '<code>{}</code> should be a JSON boolean, <code>true</code> or <code>false</code>.', # noqa
+    'object': '<code>{}</code> should be a JSON object',
+    'array': '<code>{}</code> should be a JSON array. Check that value(s) appear within square brackets, [...]'}
 
 
 def unique_ids(validator, ui, instance, schema):
@@ -519,7 +525,10 @@ def get_schema_validation_errors(json_data, schema_obj, schema_name, cell_src_ma
 
         header = value.get('header')
         if not header and len(e.path):
-            header = e.path[-1]
+            if isinstance(e.path[-1], int) and len(e.path) >= 2:
+                header = '{}/{}'.format(e.path[-2], e.path[-1])
+            else:
+                header = e.path[-1]
 
         validator_type = e.validator
         if e.validator in ('format', 'type'):
@@ -562,26 +571,38 @@ def get_schema_validation_errors(json_data, schema_obj, schema_name, cell_src_ma
                 field_name = heading[0][1]
                 value['header'] = heading[0][1]
             if parent_name:
-                message = "'{}' is missing but required within '{}'".format(field_name, parent_name)
-                message_safe = format_html("<code>{}</code> is missing but required within <code>{}</code>", field_name, parent_name) # noqa
+                message = "'{}' is missing but required within '{}'. Check that the field is included and correctly spelled.".format(field_name, parent_name) # noqa
+                message_safe = format_html("<code>{}</code> is missing but required within <code>{}</code>. Check that the field is included and correctly spelled.", field_name, parent_name) # noqa
             else:
-                message = "'{}' is missing but required".format(field_name)
-                message_safe = format_html("<code>{}</code> is missing but required", field_name, parent_name)
+                message = "'{}' is missing but required. Check that the field is included and correctly spelled.".format(field_name) # noqa
+                message_safe = format_html("<code>{}</code> is missing but required. Check that the field is included and correctly spelled.", field_name, parent_name) # noqa
 
         if e.validator == 'enum':
             if "isCodelist" in e.schema:
                 continue
-            message = "Invalid code found in '{}'".format(header)
-            message_safe = format_html("Invalid code found in <code>{}</code>", header)
+            message = "'{}' contains an unrecognised value. Check the related codelist for allowed code values.".format(header) # noqa
+            message_safe = format_html("<code>{}</code> contains an unrecognised value. Check the related codelist for allowed code values.", header) # noqa
 
         if e.validator == 'pattern':
             message_safe = format_html('<code>{}</code> does not match the regex <code>{}</code>', header, e.validator_value) # noqa
 
         if e.validator == 'minItems' and e.validator_value == 1:
-            message_safe = format_html('<code>{}</code> is too short. You must supply at least one value, or remove the item entirely (unless it’s required).', e.instance) # noqa
+            message_safe = format_html('<code>{}</code> is too short. You must supply at least one value, or remove the item entirely (unless it’s required).', header) # noqa
 
-        if e.validator == 'minLength' and e.validator_value == 1:
-            message_safe = format_html('<code>"{}"</code> is too short. Strings must be at least one character. This error typically indicates a missing value.', e.instance) # noqa
+        if e.validator == 'minLength':
+            if e.validator_value == 1:
+                message_safe = format_html('<code>"{}"</code> is too short. Strings must be at least one character. This error typically indicates a missing value.', header) # noqa
+            else:
+                message_safe = format_html('<code>{}</code> is too short. It should be at least {} characters.', header, e.validator_value) # noqa 
+
+        if e.validator == 'maxLength':
+            message_safe = format_html('<code>{}</code> is too long. It should not exceed {} characters.', header, e.validator_value) # noqa
+
+        if e.validator == 'minimum':
+            message_safe = format_html('<code>{}</code> is too small. The minimum allowed value is {}.', header, e.validator_value) # noqa
+
+        if e.validator == 'maximum':
+            message_safe = format_html('<code>{}</code> is too large. The maximum allowed value is {}.', header, e.validator_value) # noqa
 
         if message_safe is None:
             message_safe = escape(message)
