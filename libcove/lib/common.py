@@ -8,7 +8,6 @@ import re
 import collections
 import datetime
 import fcntl
-from collections import OrderedDict
 
 from cached_property import cached_property
 from .tools import cached_get_request, decimal_default
