@@ -519,8 +519,11 @@ def get_schema_validation_errors(json_data, schema_obj, schema_name, cell_src_ma
                 value["sheet"], value["row_number"] = first_reference
 
         header = value.get('header')
+        header_extra = None
         if not header and len(e.path):
             header = e.path[-1]
+            if isinstance(e.path[-1], int) and len(e.path) >= 2:
+                header_extra = '{}/{}'.format(e.path[-2], e.path[-1])
 
         null_clause = ''
         validator_type = e.validator
@@ -562,6 +565,7 @@ def get_schema_validation_errors(json_data, schema_obj, schema_name, cell_src_ma
             if heading:
                 field_name = heading[0][1]
                 value['header'] = heading[0][1]
+            header = field_name
             if parent_name:
                 message = "'{}' is missing but required within '{}'".format(field_name, parent_name)
                 message_safe = format_html("<code>{}</code> is missing but required within <code>{}</code>", field_name, parent_name) # noqa
@@ -587,6 +591,9 @@ def get_schema_validation_errors(json_data, schema_obj, schema_name, cell_src_ma
         if message_safe is None:
             message_safe = escape(message)
 
+        if header_extra is None:
+            header_extra = header
+
         unique_validator_key = OrderedDict([
             ('message', message),
             ('message_safe', conditional_escape(message_safe)),
@@ -597,9 +604,8 @@ def get_schema_validation_errors(json_data, schema_obj, schema_name, cell_src_ma
             ('validator_value', e.validator_value if e.validator not in ['enum', 'required'] else None),
             ('message_type', validator_type),
             ('path_no_number', path_no_number),
-            # Don't pass 'header' if it is a number, as this will mean less
-            # grouping, which we don't want.
-            ('header', header if isinstance(header, str) else None),
+            ('header', header),
+            ('header_extra', header_extra),
             ('null_clause', null_clause),
         ])
         validation_errors[json.dumps(unique_validator_key)].append(value)
