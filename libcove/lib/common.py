@@ -8,6 +8,7 @@ import re
 import collections
 import datetime
 import fcntl
+from collections import OrderedDict
 
 from cached_property import cached_property
 from .tools import cached_get_request, decimal_default
@@ -521,10 +522,10 @@ def get_schema_validation_errors(json_data, schema_obj, schema_name, cell_src_ma
         if not header and len(e.path):
             header = e.path[-1]
 
+        null_clause = ''
         validator_type = e.validator
         if e.validator in ('format', 'type'):
             validator_type = e.validator_value
-            null_clause = ''
             if isinstance(e.validator_value, list):
                 validator_type = e.validator_value[0]
                 if 'null' not in e.validator_value:
@@ -586,14 +587,22 @@ def get_schema_validation_errors(json_data, schema_obj, schema_name, cell_src_ma
         if message_safe is None:
             message_safe = escape(message)
 
-        unique_validator_key = {
-            'validator': e.validator,
-            'message_type': validator_type,
-            'message': message,
-            'message_safe': conditional_escape(message_safe),
-            'path_no_number': path_no_number
-        }
-        validation_errors[json.dumps(unique_validator_key, sort_keys=True)].append(value)
+        unique_validator_key = OrderedDict([
+            ('message', message),
+            ('message_safe', conditional_escape(message_safe)),
+            ('validator', e.validator),
+            # Don't pass this value for 'enum' and 'required' validators,
+            # because it is not needed, and it will mean less grouping, which
+            # we don't want.
+            ('validator_value', e.validator_value if e.validator not in ['enum', 'required'] else None),
+            ('message_type', validator_type),
+            ('path_no_number', path_no_number),
+            # Don't pass 'header' if it is a number, as this will mean less
+            # grouping, which we don't want.
+            ('header', header if isinstance(header, str) else None),
+            ('null_clause', null_clause),
+        ])
+        validation_errors[json.dumps(unique_validator_key)].append(value)
     return dict(validation_errors)
 
 
