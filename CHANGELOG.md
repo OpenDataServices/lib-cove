@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Put more data into the error JSON returned, when grouping validation errors. This will allow different CoVEs to write their own validation messages.
+
 ## [0.5.0] - 2019-03-25
 
 ### Added
