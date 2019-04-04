@@ -7,11 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Put more data into the error JSON returned, when grouping validation errors. This will allow different CoVEs to write their own validation messages. [#14](https://github.com/OpenDataServices/lib-cove/pull/14)
+
 ## [0.5.0] - 2019-03-25
 
 ### Added
 
-- Return specific validation errors for `oneOf`, by using `statementType` to pick the correct sub-schema. Only works for BODS. [#16](https://github.com/openownership/cove-bods/issues/16)
+- Return specific validation errors for `oneOf`, by using `statementType` to pick the correct sub-schema. Only works for BODS. [cove-bods#16](https://github.com/openownership/cove-bods/issues/16)
 
 ## [0.4.0] - 2019-03-14
 
