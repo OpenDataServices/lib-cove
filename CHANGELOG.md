@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- cache_all_requests config option, off by default
+  - New function libcove.tools.get_request(). Pass it a config and it will use cache_all_requests option to decide whether to cache or not. (Also has force_cache option)
+  - load_codelist function now takes a config option, and will cache requests if set (Uses new get_request function)
+  - load_core_codelists function now takes a config option, and will cache requests if set.
+  - SchemaJsonMixin will check a config varible in the class as well as cache_schema variable (Uses new get_request function)
+
 ### Changed
 
 - Put more data into the error JSON returned, when grouping validation errors. This will allow different CoVEs to write their own validation messages. [#14](https://github.com/OpenDataServices/lib-cove/pull/14)
