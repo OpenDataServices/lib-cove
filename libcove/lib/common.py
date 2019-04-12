@@ -10,7 +10,7 @@ import datetime
 import fcntl
 
 from cached_property import cached_property
-from .tools import cached_get_request, decimal_default
+from .tools import get_request, decimal_default
 from urllib.parse import urlparse, urljoin
 from collections import OrderedDict
 from flattentool import unflatten
@@ -152,23 +152,24 @@ validator.VALIDATORS["required"] = required_draft4
 validator.VALIDATORS["oneOf"] = oneOf_draft4
 
 
+# Properties this class might look for
+# * cache_schema, boolean. This is deprecated, use the 'cache_all_requests' option in config instead
+# * config, an instance of a config class.
 class SchemaJsonMixin():
     @cached_property
     def release_schema_str(self):
-        if getattr(self, 'cache_schema', False):
-            response = cached_get_request(self.release_schema_url)
-        else:
-            response = requests.get(self.release_schema_url)
+        response = get_request(self.release_schema_url,
+                               config=getattr(self, 'config', None),
+                               force_cache=getattr(self, 'cache_schema', False))
         return response.text
 
     @cached_property
     def release_pkg_schema_str(self):
         uri_scheme = urlparse(self.release_pkg_schema_url).scheme
         if uri_scheme == 'http' or uri_scheme == 'https':
-            if getattr(self, 'cache_schema', False):
-                response = cached_get_request(self.release_pkg_schema_url)
-            else:
-                response = requests.get(self.release_pkg_schema_url)
+            response = get_request(self.release_pkg_schema_url,
+                                   config=getattr(self, 'config', None),
+                                   force_cache=getattr(self, 'cache_schema', False))
             return response.text
         else:
             with open(self.release_pkg_schema_url) as fp:
@@ -261,10 +262,10 @@ def get_schema_codelist_paths(schema_obj, obj=None, current_path=(), codelist_pa
     return codelist_paths
 
 
-def load_codelist(url):
+def load_codelist(url, config=None):
     codelist_map = {}
 
-    response = requests.get(url)
+    response = get_request(url, config=config)
     response.raise_for_status()
     reader = csv.DictReader(line.decode("utf8") for line in response.iter_lines())
     for record in reader:
@@ -278,11 +279,11 @@ def load_codelist(url):
 
 
 @functools.lru_cache()
-def load_core_codelists(codelist_url, unique_files):
+def load_core_codelists(codelist_url, unique_files, config=None):
     codelists = {}
     for codelist_file in unique_files:
         try:
-            codelist_map = load_codelist(codelist_url + codelist_file)
+            codelist_map = load_codelist(codelist_url + codelist_file, config=config)
         except requests.exceptions.RequestException:
             return {}
         codelists[codelist_file] = codelist_map

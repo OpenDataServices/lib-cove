@@ -9,6 +9,13 @@ def cached_get_request(url):
     return requests.get(url)
 
 
+def get_request(url, config=None, force_cache=False):
+    if force_cache or (config and 'cache_all_requests' in config.config and config.config['cache_all_requests']):
+        return cached_get_request(url)
+    else:
+        return requests.get(url)
+
+
 def ignore_errors(f):
     @wraps(f)
     def ignore(json_data, *args, ignore_errors=False, return_on_error={}, **kwargs):
