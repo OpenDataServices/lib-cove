@@ -332,11 +332,26 @@ def common_checks_context(upload_dir, json_data, schema_obj, schema_name, contex
                 'version_used_display': schema_version_choices[schema_version][0]}
             )
 
+    if schema_name == 'record-package-schema.json':
+        schema_fields = schema_obj.get_record_pkg_schema_fields()
+    else:
+        schema_fields = schema_obj.get_release_pkg_schema_fields()
+
+    additional_fields_all = get_additional_fields_info(json_data, schema_fields,
+                                                       context, fields_regex=fields_regex)
+
     additional_fields = sorted(get_counts_additional_fields(json_data, schema_obj, schema_name,
-                                                            context, fields_regex=fields_regex))
+                                                            context, fields_regex=fields_regex,
+                                                            additional_fields_info=additional_fields_all))
+
+    additional_fields_count = sum(item[2] for item in additional_fields)
+    additional_fields_all = get_additional_fields_info(json_data, schema_fields,
+                                                       context, fields_regex=fields_regex)
+
     context.update({
         'data_only': additional_fields,
-        'additional_fields_count': sum(item[2] for item in additional_fields)
+        'additional_fields': additional_fields_all,
+        'additional_fields_count': additional_fields_count
     })
 
     cell_source_map = {}
@@ -461,26 +476,49 @@ def get_additional_codelist_values(schema_obj, json_data):
     return additional_codelist_values
 
 
-def get_counts_additional_fields(json_data, schema_obj, schema_name, context, fields_regex=False):
-    if schema_name == 'record-package-schema.json':
-        schema_fields = schema_obj.get_record_pkg_schema_fields()
-    else:
-        schema_fields = schema_obj.get_release_pkg_schema_fields()
+def get_additional_fields_info(json_data, schema_fields, context, fields_regex=False):
+    fields_present = get_fields_present_with_examples(json_data)
 
-    fields_present = get_fields_present(json_data)
-    data_only_all = set(fields_present) - schema_fields
-    data_only = set()
-    for field in data_only_all:
-        parent_field = "/".join(field.split('/')[:-1])
-        # only take fields with parent in schema (and top level fields)
-        # to make results less verbose
-        if not parent_field or parent_field in schema_fields:
-            if fields_regex:
-                if LANGUAGE_RE.search(field.split('/')[-1]):
-                    continue
-            data_only.add(field)
+    additional_fields = collections.OrderedDict()
+    root_additional_fields = set()
 
-    return [('/'.join(key.split('/')[:-1]), key.split('/')[-1], fields_present[key]) for key in data_only]
+    for field, field_info in fields_present.items():
+
+        if field in schema_fields:
+            continue
+        if fields_regex and LANGUAGE_RE.search(field.split('/')[-1]):
+            continue
+
+        for root_additional_field in root_additional_fields:
+            if field.startswith(root_additional_field):
+                field_info['root_additional_field'] = False
+                additional_fields[root_additional_field]['additional_field_descendance'][field] = field_info
+                break
+        else:
+            field_info['root_additional_field'] = True
+            field_info['additional_field_descendance'] = collections.OrderedDict()
+            root_additional_fields.add(field)
+
+        field_info['path'] = '/'.join(field.split('/')[:-1])
+        field_info['field_name'] = field.split('/')[-1]
+        additional_fields[field] = field_info
+
+    return additional_fields
+
+
+def get_counts_additional_fields(json_data, schema_obj, schema_name, context,
+                                 fields_regex=False, additional_fields_info=None):
+
+    if not additional_fields_info:
+        if schema_name == 'record-package-schema.json':
+            schema_fields = schema_obj.get_record_pkg_schema_fields()
+        else:
+            schema_fields = schema_obj.get_release_pkg_schema_fields()
+        additional_fields_info = get_additional_fields_info(json_data, schema_fields, context, fields_regex=False)
+
+    return [(field_info['path'], field_info['field_name'], field_info['count'])
+            for field, field_info in additional_fields_info.items()
+            if field_info['root_additional_field']]
 
 
 def get_schema_validation_errors(json_data, schema_obj, schema_name, cell_src_map, heading_src_map, extra_checkers=None): # noqa
@@ -741,10 +779,21 @@ def _generate_data_path(json_data, path=()):
             yield path + (key,), value
 
 
+def get_fields_present_with_examples(*args, **kwargs):
+    counter = collections.OrderedDict()
+    for key, value in fields_present_generator(*args, **kwargs):
+        if key not in counter:
+            counter[key] = {'count': 0, 'examples': []}
+        counter[key]['count'] += 1
+        if len(counter[key]['examples']) < 3:
+            if not isinstance(value, (list, dict)):
+                counter[key]['examples'].append(value)
+
+    return counter
+
+
 def get_fields_present(*args, **kwargs):
-    counter = collections.Counter()
-    counter.update(fields_present_generator(*args, **kwargs))
-    return dict(counter)
+    return {key: value['count'] for key, value in get_fields_present_with_examples(*args, **kwargs).items()}
 
 
 class CustomRefResolver(RefResolver):
@@ -865,15 +914,15 @@ def fields_present_generator(json_data, prefix=''):
     if isinstance(json_data, dict):
         for key, value in json_data.items():
             if isinstance(value, list):
+                yield prefix + '/' + key, value
                 for item in value:
                     if isinstance(item, dict):
                         yield from fields_present_generator(item, prefix + '/' + key)
-                yield prefix + '/' + key
             elif isinstance(value, dict):
+                yield prefix + '/' + key, value
                 yield from fields_present_generator(value, prefix + '/' + key)
-                yield prefix + '/' + key
             else:
-                yield prefix + '/' + key
+                yield prefix + '/' + key, value
     elif isinstance(json_data, list):
         for item in json_data:
             if isinstance(item, dict):

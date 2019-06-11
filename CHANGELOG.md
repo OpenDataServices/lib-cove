@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.7.0] - 2019-06-06
+
+### Added
+
+- Add new additional fields section to context which list all additional fields.  It also states which are top level additional fields with all their descendants.
+
 ## [0.6.0] - 2019-04-12
 
 ### Added

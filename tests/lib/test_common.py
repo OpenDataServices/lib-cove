@@ -3,7 +3,8 @@ import os
 from collections import OrderedDict
 from libcove.lib.common import SchemaJsonMixin, \
     get_json_data_generic_paths, get_json_data_deprecated_fields, get_fields_present, \
-    _get_schema_deprecated_paths, schema_dict_fields_generator, fields_present_generator, get_orgids_prefixes
+    _get_schema_deprecated_paths, schema_dict_fields_generator, fields_present_generator, get_orgids_prefixes, \
+    get_additional_fields_info
 
 
 def test_get_json_data_deprecated_fields():
@@ -131,7 +132,7 @@ def test_fields_present_generator_tenders_releases_2_releases():
                            'tenders_releases_2_releases.json')) as fp:  # noqa
         json_schema = json.load(fp)
 
-    data = sorted(set(fields_present_generator(json_schema)))
+    data = sorted(set(key for key, _ in fields_present_generator(json_schema)))
 
     assert data == ['/license', '/publishedDate', '/publisher', '/publisher/name', '/publisher/scheme',
                     '/publisher/uid',
@@ -157,7 +158,7 @@ def test_fields_present_generator_data_root_is_list():
                            'data_root_is_list.json')) as fp:  # noqa
         json_schema = json.load(fp)
 
-    data = sorted(set(fields_present_generator(json_schema)))
+    data = sorted(set(key for key, _ in fields_present_generator(json_schema)))
 
     assert data == ['/addresses', '/addresses/address', '/addresses/country', '/addresses/postCode', '/addresses/type',
                     '/birthDate', '/entityType', '/foundingDate', '/identifiers', '/identifiers/id',
@@ -167,6 +168,27 @@ def test_fields_present_generator_data_root_is_list():
                     '/names', '/names/familyName', '/names/fullName', '/names/givenName', '/names/type',
                     '/nationalities', '/nationalities/code', '/personType', '/statementDate', '/statementID',
                     '/statementType', '/subject', '/subject/describedByEntityStatement']
+
+
+def test_get_additional_fields_info():
+
+    simple_data = {
+        "non_additional_field": "a",
+        "non_additional_list": [1, 2],
+        "non_additional_object": {"z": "z"},
+        "additional_object": {"a": "a", "b": "b"},
+        "additional_list": [{"c": "c", "d": "d"}, {"e": "e", "f": "f"}, {"e": "e", "f": "f"}]
+    }
+
+    schema_fields = {"/non_additional_field", "/non_additional_list",
+                     "/non_additional_object", "/non_additional_object/z"}
+
+    additional_field_info = get_additional_fields_info(json_data=simple_data,
+                                                       schema_fields=schema_fields,
+                                                       context={})
+    assert len(additional_field_info) == 8
+    assert sum(info['count'] for info in additional_field_info.values()) == 10
+    assert len([info for info in additional_field_info.values() if info['root_additional_field']]) == 2
 
 
 def test_get_orgids_prefixes_live():
