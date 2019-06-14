@@ -302,14 +302,15 @@ def _deref_schema(schema_str, schema_host):
 class CustomJsonrefLoader(jsonref.JsonLoader):
     '''This ref loader is only for use with the jsonref library
     and NOT jsonschema.'''
-    def __init__(self, **kwargs):
-        self.schema_url = kwargs.pop('schema_url', None)
+    def __init__(self, schema_url, **kwargs):
+        self.schema_url = schema_url
         super().__init__(**kwargs)
 
     def get_remote_json(self, uri, **kwargs):
         # ignore url in ref apart from last part
-        uri = self.schema_url + uri.split('/')[-1]
-        if uri[:4] == 'http':
+        uri_info = urlparse(uri)
+        uri = urljoin(self.schema_url, os.path.basename(uri_info.path))
+        if 'http' in uri_info.scheme:
             return super().get_remote_json(uri, **kwargs)
         else:
             with open(uri) as schema_file:
