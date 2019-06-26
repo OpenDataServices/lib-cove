@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+
+### Changed
+
+- OCDS is now available on SSL. Updated comments and tests (but no code)
+
 ## [0.7.0] - 2019-06-06
 
 ### Added
