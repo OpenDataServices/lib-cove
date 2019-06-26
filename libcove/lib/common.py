@@ -803,7 +803,7 @@ class CustomRefResolver(RefResolver):
         self.file_schema_name = kw.pop('file_schema_name', '')
         # the path on the disk of the file you want to replace the ref
         self.schema_file = kw.pop('schema_file', None)
-        # the url of the path to the schema. i.e http://standard.open-contracting.org/schema/1__1__1/
+        # the url of the path to the schema. i.e https://standard.open-contracting.org/schema/1__1__1/
         # the name of the schema file is appended to this to make the full url.
         # this is ignored when you supply a file
         self.schema_url = kw.pop('schema_url', '')
