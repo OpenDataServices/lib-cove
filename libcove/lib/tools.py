@@ -18,7 +18,7 @@ def get_request(url, config=None, force_cache=False):
 
 def ignore_errors(f):
     @wraps(f)
-    def ignore(json_data, *args, ignore_errors=False, return_on_error={}, **kwargs):
+    def ignore(json_data, ignore_errors=False, return_on_error={}, *args, **kwargs):
         if ignore_errors:
             try:
                 return f(json_data, *args, **kwargs)
