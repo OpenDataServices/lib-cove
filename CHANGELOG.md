@@ -7,10 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.8.0] - 2019-08-28
 
 ### Changed
 
-- OCDS is now available on SSL. Updated comments and tests (but no code)
+- OCDS is now available on SSL. Updated comments and tests (but no code).
+- Improve CustomJsonrefLoader; make `schema_url` a required parameter.
+- Improve UI for validation errors on array items.
+- More tests.
 
 ## [0.7.0] - 2019-06-06
 
