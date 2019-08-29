@@ -118,10 +118,13 @@ def convert_spreadsheet(upload_dir, upload_url, file_name, file_type, lib_cove_c
     return context
 
 
-def convert_json(upload_dir, upload_url, file_name, lib_cove_config, root_list_path, 
+def convert_json(upload_dir, upload_url, file_name, lib_cove_config, root_list_path=None, 
                 schema_url=None, replace=False, request=None, flatten=False, cache=True, xml=False):
     context = {}
     converted_path = os.path.join(upload_dir, 'flattened')
+
+    if root_list_path == None:
+        root_list_path = lib_cove_config.config['root_list_path'] 
 
     flatten_kwargs = dict(
         output_name=converted_path,
