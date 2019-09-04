@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.9.0] - 2019-08-29
+
+### Changed
+
+- Allow the passing of `root_list_path` to the conversion tool
+
 ## [0.8.0] - 2019-08-28
 
 ### Changed
