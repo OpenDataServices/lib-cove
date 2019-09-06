@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
-- Allow the passing of `root_id` to the conversion tool
+- Revert the changes made in v0.9.0
 
 ## [0.9.0] - 2019-08-29
 
