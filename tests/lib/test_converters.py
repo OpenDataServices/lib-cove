@@ -52,8 +52,9 @@ def test_convert_xml_1():
     )
 
     lib_cove_config = LibCoveConfig()
+    lib_cove_config.config['root_list_path'] = 'iati-activity'
     output = convert_json(cove_temp_folder, "", xml_filename, lib_cove_config, flatten=True,
-                          xml=True, root_list_path='iati-activity')
+                          xml=True)
 
     assert output['converted_url'] == '/flattened'
     assert len(output['conversion_warning_messages']) == 0
@@ -89,6 +90,7 @@ def test_convert_json_root_is_list_1():
 
     lib_cove_config = LibCoveConfig()
     lib_cove_config.config['root_is_list'] = True
+    lib_cove_config.config['root_list_path'] = 'main'
     output = convert_json(cove_temp_folder, "", json_filename, lib_cove_config, flatten=True)
 
     assert output['converted_url'] == '/flattened'
