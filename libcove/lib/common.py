@@ -121,6 +121,42 @@ def oneOf_draft4(validator, oneOf, instance, schema):
                     validator='required',
                 )
                 break
+        # We check the title, because we don't have access to the field name,
+        # as it lives in the parent.
+        # It will not match the releases array in a release package, because
+        # there is no oneOf.
+        if schema.get("title") == "Releases":
+            # If instance if not a list, or is a list of zero length, then
+            # validating against either subschema will work.
+            # Assume instance is an array of Linked releases
+            if type(instance) is not list or all(
+                "id" not in release for release in instance
+            ):
+                if (
+                    "properties" in subschema.get("items", {})
+                    and "id" not in subschema["items"]["properties"]
+                ):
+                    for err in errs:
+                        yield err
+                    return
+            # Assume instance is an array of Embedded releases
+            elif all("id" in release for release in instance):
+                if "id" in subschema.get("items", {}).get(
+                    "properties", {}
+                ) or subschema.get("items", {}).get("$ref", "").endswith(
+                    "release-schema.json"
+                ):
+                    for err in errs:
+                        yield err
+                    return
+            else:
+                yield ValidationError(
+                    "This array should contain either entirely Embedded releases or "
+                    "Linked releases. Embedded releases contain an `id` whereas Linked"
+                    "releases do not. Your releases contain a mixture."
+                )
+                break
+
         all_errors.extend(errs)
     else:
         if validStatementTypes:

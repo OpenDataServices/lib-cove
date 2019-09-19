@@ -1,0 +1,58 @@
+{
+    "uri": "http://example.org/invalid_record.json",
+    "version": "1.1",
+    "publishedDate": "2019-09-18T17:56:21.078Z",
+    "publisher": {
+        "name": "A Publisher Name"
+    },
+    "records": [
+        {
+            "ocid": "EXAMPLE-1",
+            "releases": []
+        },
+        {
+            "ocid": "EXAMPLE-2",
+            "releases": [
+                {}
+            ]
+        },
+        {
+            "ocid": "EXAMPLE-3",
+            "releases": [
+                {"id": "EXAMPLE-3-1"}
+            ]
+        },
+        {
+            "ocid": "EXAMPLE-4",
+            "releases": [
+                {"url": "http://example.org/releases.json#EXAMPLE-4-1"}
+            ]
+        },
+        {
+            "ocid": "EXAMPLE-5",
+            "releases": [
+                {"id": "EXAMPLE-5-1"},
+                {}
+            ]
+        },
+        {
+            "ocid": "EXAMPLE-6",
+            "releases": [
+                {"id": "EXAMPLE-5-1"},
+                {"url": "http://example.org/releases.json#EXAMPLE-4-1"}
+            ]
+        },
+        {
+            "ocid": "EXAMPLE-97",
+            "releases": "a string"
+        },
+        {
+            "ocid": "EXAMPLE-98",
+            "releases": null
+        },
+        {
+            "ocid": "EXAMPLE-99",
+            "releases": {}
+        }
+    ]
+}
