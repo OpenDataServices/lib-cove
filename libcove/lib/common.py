@@ -137,6 +137,7 @@ def oneOf_draft4(validator, oneOf, instance, schema):
                     and "id" not in subschema["items"]["properties"]
                 ):
                     for err in errs:
+                        err.assumption = "linked_releases"
                         yield err
                     return
             # Assume instance is an array of Embedded releases
@@ -147,6 +148,7 @@ def oneOf_draft4(validator, oneOf, instance, schema):
                     "release-schema.json"
                 ):
                     for err in errs:
+                        err.assumption = "embedded_releases"
                         yield err
                     return
             else:
@@ -680,6 +682,7 @@ def get_schema_validation_errors(json_data, schema_obj, schema_name, cell_src_ma
             ('message', message),
             ('message_safe', conditional_escape(message_safe)),
             ('validator', e.validator),
+            ('assumption', e.assumption if hasattr(e, 'assumption') else None),
             # Don't pass this value for 'enum' and 'required' validators,
             # because it is not needed, and it will mean less grouping, which
             # we don't want.
