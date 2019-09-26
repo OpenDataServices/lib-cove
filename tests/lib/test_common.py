@@ -314,9 +314,9 @@ def test_validation_invalid_record_package():
             "message_type": "oneOf",
             "validator": "oneOf",
             "null_clause": "",
-            "message_safe": "This array should contain either entirely Embedded releases or Linked releases. Embedded releases contain an `id` whereas Linkedreleases do not. Your releases contain a mixture.",
+            "message_safe": "This array should contain either entirely embedded releases or linked releases. Embedded releases contain an &#39;id&#39; whereas linked releases do not. Your releases contain a mixture.",
             "header": "releases",
-            "message": "This array should contain either entirely Embedded releases or Linked releases. Embedded releases contain an `id` whereas Linkedreleases do not. Your releases contain a mixture.",
+            "message": "This array should contain either entirely embedded releases or linked releases. Embedded releases contain an 'id' whereas linked releases do not. Your releases contain a mixture.",
             "path_no_number": "records/releases",
         },
         {

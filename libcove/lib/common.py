@@ -151,8 +151,8 @@ def oneOf_draft4(validator, oneOf, instance, schema):
                     return
             else:
                 yield ValidationError(
-                    "This array should contain either entirely Embedded releases or "
-                    "Linked releases. Embedded releases contain an `id` whereas Linked"
+                    "This array should contain either entirely embedded releases or "
+                    "linked releases. Embedded releases contain an 'id' whereas linked "
                     "releases do not. Your releases contain a mixture."
                 )
                 break
