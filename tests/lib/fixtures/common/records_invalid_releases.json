@@ -38,8 +38,8 @@
         {
             "ocid": "EXAMPLE-6",
             "releases": [
-                {"id": "EXAMPLE-5-1"},
-                {"url": "http://example.org/releases.json#EXAMPLE-4-1"}
+                {"id": "EXAMPLE-6-1"},
+                {"url": "http://example.org/releases.json#EXAMPLE-6-2"}
             ]
         },
         {
