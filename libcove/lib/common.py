@@ -126,9 +126,10 @@ def oneOf_draft4(validator, oneOf, instance, schema):
         # It will not match the releases array in a release package, because
         # there is no oneOf.
         if schema.get("title") == "Releases":
-            # If instance if not a list, or is a list of zero length, then
+            # If instance is not a list, or is a list of zero length, then
             # validating against either subschema will work.
-            # Assume instance is an array of Linked releases
+            # Assume instance is an array of Linked releases, if there are no
+            # "id"s in any of the releases.
             if type(instance) is not list or all(
                 "id" not in release for release in instance
             ):
@@ -140,7 +141,8 @@ def oneOf_draft4(validator, oneOf, instance, schema):
                         err.assumption = "linked_releases"
                         yield err
                     return
-            # Assume instance is an array of Embedded releases
+            # Assume instance is an array of Embedded releases, if there is an
+            # "id" in each of the releases
             elif all("id" in release for release in instance):
                 if "id" in subschema.get("items", {}).get(
                     "properties", {}

@@ -229,11 +229,9 @@ def test_validation_invalid_record_package():
     for validation_error_json, values in sorted(validation_errors.items()):
         validation_error_json = json.loads(validation_error_json)
         validation_error_json["values"] = values
-        # Remove this as it can be a rather large schema objectd
+        # Remove this as it can be a rather large schema object
         del validation_error_json["validator_value"]
         validation_error_jsons.append(validation_error_json)
-
-    print(validation_error_jsons)
 
     assert validation_error_jsons == [
         {

@@ -39,7 +39,7 @@
             "ocid": "EXAMPLE-5",
             "releases": [
                 {"id": "EXAMPLE-5-1"},
-                {"url": "http://example.org/releases.json#EXAMPLE-:-1"}
+                {"url": "http://example.org/releases.json#EXAMPLE-5-2"}
             ]
         },
         {
