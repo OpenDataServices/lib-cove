@@ -326,8 +326,12 @@ def test_validation_invalid_record_package():
             "values": [{"path": "records/1/releases/0"}],
         },
         {
-            "message": "This array should contain either entirely embedded releases or linked releases. Embedded releases contain an 'id' whereas linked releases do not. Your releases contain a mixture.",
-            "message_safe": "This array should contain either entirely embedded releases or linked releases. Embedded releases contain an &#39;id&#39; whereas linked releases do not. Your releases contain a mixture.",
+            "message": "This array should contain either entirely embedded releases or linked releases. "
+                       "Embedded releases contain an 'id' whereas linked releases do not. "
+                       "Your releases contain a mixture.",
+            "message_safe": "This array should contain either entirely embedded releases or linked releases. "
+                            "Embedded releases contain an &#39;id&#39; whereas linked releases do not. "
+                            "Your releases contain a mixture.",
             "validator": "oneOf",
             "assumption": None,
             "message_type": "oneOf",
@@ -339,7 +343,8 @@ def test_validation_invalid_record_package():
         },
         {
             "message": "[] is too short",
-            "message_safe": "<code>[]</code> is too short. You must supply at least one value, or remove the item entirely (unless it’s required).",
+            "message_safe": "<code>[]</code> is too short. "
+                            "You must supply at least one value, or remove the item entirely (unless it’s required).",
             "validator": "minItems",
             "assumption": "linked_releases",
             "message_type": "minItems",
