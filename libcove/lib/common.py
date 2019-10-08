@@ -154,11 +154,13 @@ def oneOf_draft4(validator, oneOf, instance, schema):
                         yield err
                     return
             else:
-                yield ValidationError(
+                err = ValidationError(
                     "This array should contain either entirely embedded releases or "
                     "linked releases. Embedded releases contain an 'id' whereas linked "
                     "releases do not. Your releases contain a mixture."
                 )
+                err.error_id = 'releases_both_embedded_and_linked'
+                yield err
                 break
 
         all_errors.extend(errs)
@@ -694,6 +696,7 @@ def get_schema_validation_errors(json_data, schema_obj, schema_name, cell_src_ma
             ('header', header),
             ('header_extra', header_extra),
             ('null_clause', null_clause),
+            ('error_id', e.error_id if hasattr(e, 'error_id') else None),
         ])
         validation_errors[json.dumps(unique_validator_key)].append(value)
     return dict(validation_errors)

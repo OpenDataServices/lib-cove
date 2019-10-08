@@ -235,6 +235,7 @@ def test_validation_invalid_record_package():
 
     assert validation_error_jsons == [
         {
+            'error_id': None,
             "message": "'date' is missing but required within 'releases'",
             "message_safe": "<code>date</code> is missing but required within <code>releases</code>",
             "validator": "required",
@@ -247,6 +248,7 @@ def test_validation_invalid_record_package():
             "values": [{"path": "records/2/releases/0"}],
         },
         {
+            'error_id': None,
             "message": "'date' is missing but required within 'releases'",
             "message_safe": "<code>date</code> is missing but required within <code>releases</code>",
             "validator": "required",
@@ -262,6 +264,7 @@ def test_validation_invalid_record_package():
             ],
         },
         {
+            'error_id': None,
             "message": "'initiationType' is missing but required within 'releases'",
             "message_safe": "<code>initiationType</code> is missing but required within <code>releases</code>",
             "validator": "required",
@@ -274,6 +277,7 @@ def test_validation_invalid_record_package():
             "values": [{"path": "records/2/releases/0"}],
         },
         {
+            'error_id': None,
             "message": "'ocid' is missing but required within 'releases'",
             "message_safe": "<code>ocid</code> is missing but required within <code>releases</code>",
             "validator": "required",
@@ -286,6 +290,7 @@ def test_validation_invalid_record_package():
             "values": [{"path": "records/2/releases/0"}],
         },
         {
+            'error_id': None,
             "message": "'releases' is not a JSON array",
             "message_safe": "<code>releases</code> is not a JSON array",
             "validator": "type",
@@ -302,6 +307,7 @@ def test_validation_invalid_record_package():
             ],
         },
         {
+            'error_id': None,
             "message": "'tag' is missing but required within 'releases'",
             "message_safe": "<code>tag</code> is missing but required within <code>releases</code>",
             "validator": "required",
@@ -314,6 +320,7 @@ def test_validation_invalid_record_package():
             "values": [{"path": "records/2/releases/0"}],
         },
         {
+            'error_id': None,
             "message": "'url' is missing but required within 'releases'",
             "message_safe": "<code>url</code> is missing but required within <code>releases</code>",
             "validator": "required",
@@ -326,6 +333,7 @@ def test_validation_invalid_record_package():
             "values": [{"path": "records/1/releases/0"}],
         },
         {
+            'error_id': 'releases_both_embedded_and_linked',
             "message": "This array should contain either entirely embedded releases or linked releases. "
                        "Embedded releases contain an 'id' whereas linked releases do not. "
                        "Your releases contain a mixture.",
@@ -342,6 +350,7 @@ def test_validation_invalid_record_package():
             "values": [{"path": "records/4/releases"}, {"path": "records/5/releases"}],
         },
         {
+            'error_id': None,
             "message": "[] is too short",
             "message_safe": "<code>[]</code> is too short. "
                             "You must supply at least one value, or remove the item entirely (unless it’s required).",
