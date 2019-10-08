@@ -4,7 +4,7 @@ from collections import OrderedDict
 from libcove.lib.common import SchemaJsonMixin, \
     get_json_data_generic_paths, get_json_data_deprecated_fields, get_fields_present, \
     _get_schema_deprecated_paths, schema_dict_fields_generator, fields_present_generator, get_orgids_prefixes, \
-    get_additional_fields_info
+    get_additional_fields_info, get_schema_validation_errors
 
 
 def test_get_json_data_deprecated_fields():
@@ -196,3 +196,171 @@ def test_get_orgids_prefixes_live():
 
     # There is not much we can really test here, as the results will depend on the live data!
     assert len(data) > 150
+
+
+class DummyRecordSchemaObj:
+    def __init__(self, schema_host):
+        self.schema_host = schema_host
+
+    def get_record_pkg_schema_obj(self):
+        with open(os.path.join(self.schema_host, "record-package-schema.json")) as fp:
+            schema_json = json.load(fp)
+        return schema_json
+
+
+def test_validation_invalid_record_package():
+    filename = "records_invalid_releases.json"
+
+    schema_host = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "fixtures", "common", ""
+    )
+    with open(os.path.join(schema_host, filename)) as fp:
+        invalid_record_package = json.load(fp)
+
+    validation_errors = get_schema_validation_errors(
+        invalid_record_package,
+        DummyRecordSchemaObj(schema_host),
+        "record-package-schema.json",
+        {},
+        {},
+    )
+
+    validation_error_jsons = []
+    for validation_error_json, values in sorted(validation_errors.items()):
+        validation_error_json = json.loads(validation_error_json)
+        validation_error_json["values"] = values
+        # Remove this as it can be a rather large schema object
+        del validation_error_json["validator_value"]
+        validation_error_jsons.append(validation_error_json)
+
+    assert validation_error_jsons == [
+        {
+            'error_id': None,
+            "message": "'date' is missing but required within 'releases'",
+            "message_safe": "<code>date</code> is missing but required within <code>releases</code>",
+            "validator": "required",
+            "assumption": "embedded_releases",
+            "message_type": "required",
+            "path_no_number": "records/releases",
+            "header": "date",
+            "header_extra": "releases/0",
+            "null_clause": "",
+            "values": [{"path": "records/2/releases/0"}],
+        },
+        {
+            'error_id': None,
+            "message": "'date' is missing but required within 'releases'",
+            "message_safe": "<code>date</code> is missing but required within <code>releases</code>",
+            "validator": "required",
+            "assumption": "linked_releases",
+            "message_type": "required",
+            "path_no_number": "records/releases",
+            "header": "date",
+            "header_extra": "releases/0",
+            "null_clause": "",
+            "values": [
+                {"path": "records/1/releases/0"},
+                {"path": "records/3/releases/0"},
+            ],
+        },
+        {
+            'error_id': None,
+            "message": "'initiationType' is missing but required within 'releases'",
+            "message_safe": "<code>initiationType</code> is missing but required within <code>releases</code>",
+            "validator": "required",
+            "assumption": "embedded_releases",
+            "message_type": "required",
+            "path_no_number": "records/releases",
+            "header": "initiationType",
+            "header_extra": "releases/0",
+            "null_clause": "",
+            "values": [{"path": "records/2/releases/0"}],
+        },
+        {
+            'error_id': None,
+            "message": "'ocid' is missing but required within 'releases'",
+            "message_safe": "<code>ocid</code> is missing but required within <code>releases</code>",
+            "validator": "required",
+            "assumption": "embedded_releases",
+            "message_type": "required",
+            "path_no_number": "records/releases",
+            "header": "ocid",
+            "header_extra": "releases/0",
+            "null_clause": "",
+            "values": [{"path": "records/2/releases/0"}],
+        },
+        {
+            'error_id': None,
+            "message": "'releases' is not a JSON array",
+            "message_safe": "<code>releases</code> is not a JSON array",
+            "validator": "type",
+            "assumption": "linked_releases",
+            "message_type": "array",
+            "path_no_number": "records/releases",
+            "header": "releases",
+            "header_extra": "releases",
+            "null_clause": "is not null, and",
+            "values": [
+                {"path": "records/6/releases", "value": "a string"},
+                {"path": "records/7/releases", "value": None},
+                {"path": "records/8/releases"},
+            ],
+        },
+        {
+            'error_id': None,
+            "message": "'tag' is missing but required within 'releases'",
+            "message_safe": "<code>tag</code> is missing but required within <code>releases</code>",
+            "validator": "required",
+            "assumption": "embedded_releases",
+            "message_type": "required",
+            "path_no_number": "records/releases",
+            "header": "tag",
+            "header_extra": "releases/0",
+            "null_clause": "",
+            "values": [{"path": "records/2/releases/0"}],
+        },
+        {
+            'error_id': None,
+            "message": "'url' is missing but required within 'releases'",
+            "message_safe": "<code>url</code> is missing but required within <code>releases</code>",
+            "validator": "required",
+            "assumption": "linked_releases",
+            "message_type": "required",
+            "path_no_number": "records/releases",
+            "header": "url",
+            "header_extra": "releases/0",
+            "null_clause": "",
+            "values": [{"path": "records/1/releases/0"}],
+        },
+        {
+            'error_id': 'releases_both_embedded_and_linked',
+            "message": "This array should contain either entirely embedded releases or linked releases. "
+                       "Embedded releases contain an 'id' whereas linked releases do not. "
+                       "Your releases contain a mixture.",
+            "message_safe": "This array should contain either entirely embedded releases or linked releases. "
+                            "Embedded releases contain an &#39;id&#39; whereas linked releases do not. "
+                            "Your releases contain a mixture.",
+            "validator": "oneOf",
+            "assumption": None,
+            "message_type": "oneOf",
+            "path_no_number": "records/releases",
+            "header": "releases",
+            "header_extra": "releases",
+            "null_clause": "",
+            "values": [{"path": "records/4/releases"}, {"path": "records/5/releases"}],
+        },
+        {
+            'error_id': None,
+            "message": "[] is too short",
+            "message_safe": "<code>[]</code> is too short. "
+                            "You must supply at least one value, or remove the item entirely (unless it’s required).",
+            "validator": "minItems",
+            "assumption": "linked_releases",
+            "message_type": "minItems",
+            "path_no_number": "records/releases",
+            "header": "releases",
+            "header_extra": "releases",
+            "null_clause": "",
+            "values": [{"path": "records/0/releases"}],
+        },
+    ]

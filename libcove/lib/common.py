@@ -121,6 +121,48 @@ def oneOf_draft4(validator, oneOf, instance, schema):
                     validator='required',
                 )
                 break
+        # We check the title, because we don't have access to the field name,
+        # as it lives in the parent.
+        # It will not match the releases array in a release package, because
+        # there is no oneOf.
+        if schema.get("title") == "Releases":
+            # If instance is not a list, or is a list of zero length, then
+            # validating against either subschema will work.
+            # Assume instance is an array of Linked releases, if there are no
+            # "id"s in any of the releases.
+            if type(instance) is not list or all(
+                "id" not in release for release in instance
+            ):
+                if (
+                    "properties" in subschema.get("items", {})
+                    and "id" not in subschema["items"]["properties"]
+                ):
+                    for err in errs:
+                        err.assumption = "linked_releases"
+                        yield err
+                    return
+            # Assume instance is an array of Embedded releases, if there is an
+            # "id" in each of the releases
+            elif all("id" in release for release in instance):
+                if "id" in subschema.get("items", {}).get(
+                    "properties", {}
+                ) or subschema.get("items", {}).get("$ref", "").endswith(
+                    "release-schema.json"
+                ):
+                    for err in errs:
+                        err.assumption = "embedded_releases"
+                        yield err
+                    return
+            else:
+                err = ValidationError(
+                    "This array should contain either entirely embedded releases or "
+                    "linked releases. Embedded releases contain an 'id' whereas linked "
+                    "releases do not. Your releases contain a mixture."
+                )
+                err.error_id = 'releases_both_embedded_and_linked'
+                yield err
+                break
+
         all_errors.extend(errs)
     else:
         if validStatementTypes:
@@ -644,6 +686,7 @@ def get_schema_validation_errors(json_data, schema_obj, schema_name, cell_src_ma
             ('message', message),
             ('message_safe', conditional_escape(message_safe)),
             ('validator', e.validator),
+            ('assumption', e.assumption if hasattr(e, 'assumption') else None),
             # Don't pass this value for 'enum' and 'required' validators,
             # because it is not needed, and it will mean less grouping, which
             # we don't want.
@@ -653,6 +696,7 @@ def get_schema_validation_errors(json_data, schema_obj, schema_name, cell_src_ma
             ('header', header),
             ('header_extra', header_extra),
             ('null_clause', null_clause),
+            ('error_id', e.error_id if hasattr(e, 'error_id') else None),
         ])
         validation_errors[json.dumps(unique_validator_key)].append(value)
     return dict(validation_errors)

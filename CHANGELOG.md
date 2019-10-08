@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.11.0] - 2019-10-08
+
+### Added
+
+- Return specific validation errors for `oneOf` in OCDS records, by using the presence/absence of `id` to assume embedded/linked releases sub-schema. Only works for OCDS records. [cove#895](https://github.com/OpenDataServices/cove/issues/895)
+- Add an `assumption` key to the validation JSON, to flag when one of the above assumptions has been made. [cove#895](https://github.com/OpenDataServices/cove/issues/895)
+- Add an `error_id` key to the validation JSON, a machine readable ID for the error. Currently only implemented for 1 error. [#31](https://github.com/OpenDataServices/lib-cove/pull/31#issuecomment-538868533)
+
+### Changed
+
+- Remove restriction on jsonschema version ([commit](https://github.com/OpenDataServices/lib-cove/pull/31/commits/f23fdd332c97903e21e478146bd490898efe3995))
+
 ## [0.10.0] - 2019-09-06
 
 ### Changed
