@@ -78,7 +78,7 @@ def convert_spreadsheet(
         "input_format": file_type,
         "default_configuration": "RootListPath {}".format(
             lib_cove_config.config["root_list_path"]
-        ),  # noqa
+        ),
         "encoding": encoding,
         "cell_source_map": cell_source_map_path,
         "heading_source_map": heading_source_map_path,
@@ -97,7 +97,7 @@ def convert_spreadsheet(
         flattentool_options["xml"] = True
         flattentool_options["default_configuration"] += ",IDName {}".format(
             lib_cove_config.config.get("id_name", "id")
-        )  # noqa
+        )
         flattentool_options["xml_schemas"] = xml_schemas
         if lib_cove_config.config["flatten_tool"].get("xml_comment"):
             flattentool_options["xml_comment"] = lib_cove_config.config[
@@ -229,9 +229,7 @@ def convert_json(
                     flattentool.flatten(file_name, **flatten_kwargs)
                     context[
                         "conversion_warning_messages_titles"
-                    ] = filter_conversion_warnings(
-                        conversion_warnings_titles
-                    )  # noqa
+                    ] = filter_conversion_warnings(conversion_warnings_titles)
                     with open(conversion_warning_cache_path_titles, "w+") as fp:
                         json.dump(context["conversion_warning_messages_titles"], fp)
                 elif os.path.exists(conversion_warning_cache_path_titles):
@@ -252,7 +250,7 @@ def convert_json(
                     "We think you tried to upload a JSON file, but it is not well formed JSON.\n\nError message: {}".format(
                         err
                     )
-                ),  # noqa
+                ),
             }
         )
     except Exception as err:

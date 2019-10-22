@@ -185,7 +185,7 @@ def test_convert_csv_1():
         "csv",
         lib_cove_config,
         schema_url=csv_schema_filename,
-    )  # noqa
+    )
 
     assert output["conversion"] == "unflatten"
 

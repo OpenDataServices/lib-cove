@@ -31,13 +31,13 @@ validator = jsonschema.validators.extend(
 uniqueItemsValidator = validator.VALIDATORS.pop("uniqueItems")
 LANGUAGE_RE = re.compile(
     "^(.*_(((([A-Za-z]{2,3}(-([A-Za-z]{3}(-[A-Za-z]{3}){0,2}))?)|[A-Za-z]{4}|[A-Za-z]{5,8})(-([A-Za-z]{4}))?(-([A-Za-z]{2}|[0-9]{3}))?(-([A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*(-([0-9A-WY-Za-wy-z](-[A-Za-z0-9]{2,8})+))*(-(x(-[A-Za-z0-9]{1,8})+))?)|(x(-[A-Za-z0-9]{1,8})+)))$"
-)  # noqa
+)
 validation_error_template_lookup = {
     "date-time": "Date is not in the correct format",
     "uri": "Invalid 'uri' found",
-    "string": "{}'{}' is not a string. Check that the value {} has quotes at the start and end. Escape any quotes in the value with '\\'",  # noqa
-    "integer": "{}'{}' is not a integer. Check that the value {} doesn’t contain decimal points or any characters other than 0-9. Integer values should not be in quotes. ",  # noqa
-    "number": "{}'{}' is not a number. Check that the value {} doesn’t contain any characters other than 0-9 and dot ('.'). Number values should not be in quotes. ",  # noqa
+    "string": "{}'{}' is not a string. Check that the value {} has quotes at the start and end. Escape any quotes in the value with '\\'",
+    "integer": "{}'{}' is not a integer. Check that the value {} doesn’t contain decimal points or any characters other than 0-9. Integer values should not be in quotes. ",
+    "number": "{}'{}' is not a number. Check that the value {} doesn’t contain any characters other than 0-9 and dot ('.'). Number values should not be in quotes. ",
     "object": "{}'{}' is not a JSON object",
     "array": "{}'{}' is not a JSON array",
 }
@@ -47,9 +47,9 @@ validation_error_template_lookup = {
 validation_error_template_lookup_safe = {
     "date-time": "Date is not in the correct format",
     "uri": "Invalid 'uri' found",
-    "string": "{}<code>{}</code> is not a string. Check that the value {} has quotes at the start and end. Escape any quotes in the value with <code>\</code>",  # noqa
-    "integer": "{}<code>{}</code> is not a integer. Check that the value {} doesn’t contain decimal points or any characters other than 0-9. Integer values should not be in quotes. ",  # noqa
-    "number": "{}<code>{}</code> is not a number. Check that the value {} doesn’t contain any characters other than 0-9 and dot (<code>.</code>). Number values should not be in quotes. ",  # noqa
+    "string": "{}<code>{}</code> is not a string. Check that the value {} has quotes at the start and end. Escape any quotes in the value with <code>\</code>",
+    "integer": "{}<code>{}</code> is not a integer. Check that the value {} doesn’t contain decimal points or any characters other than 0-9. Integer values should not be in quotes. ",
+    "number": "{}<code>{}</code> is not a number. Check that the value {} doesn’t contain any characters other than 0-9 and dot (<code>.</code>). Number values should not be in quotes. ",
     "object": "{}<code>{}</code> is not a JSON object",
     "array": "{}<code>{}</code> is not a JSON array",
 }
@@ -649,7 +649,7 @@ def get_schema_validation_errors(
     cell_src_map,
     heading_src_map,
     extra_checkers=None,
-):  # noqa
+):
     if schema_name == "record-package-schema.json":
         pkg_schema_obj = schema_obj.get_record_pkg_schema_obj()
     else:
@@ -767,7 +767,7 @@ def get_schema_validation_errors(
                     "<code>{}</code> is missing but required within <code>{}</code>",
                     field_name,
                     parent_name,
-                )  # noqa
+                )
             else:
                 message = "'{}' is missing but required".format(field_name)
                 message_safe = format_html(
@@ -785,19 +785,19 @@ def get_schema_validation_errors(
                 "<code>{}</code> does not match the regex <code>{}</code>",
                 header,
                 e.validator_value,
-            )  # noqa
+            )
 
         if e.validator == "minItems" and e.validator_value == 1:
             message_safe = format_html(
                 "<code>{}</code> is too short. You must supply at least one value, or remove the item entirely (unless it’s required).",
                 e.instance,
-            )  # noqa
+            )
 
         if e.validator == "minLength" and e.validator_value == 1:
             message_safe = format_html(
                 '<code>"{}"</code> is too short. Strings must be at least one character. This error typically indicates a missing value.',
                 e.instance,
-            )  # noqa
+            )
 
         if message_safe is None:
             message_safe = escape(message)

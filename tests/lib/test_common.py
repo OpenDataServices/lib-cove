@@ -24,7 +24,7 @@ def test_get_json_data_deprecated_fields():
             "common",
             "tenders_releases_2_releases_with_deprecated_fields.json",
         )
-    ) as fp:  # noqa
+    ) as fp:
         json_data_w_deprecations = json.load(fp)
 
     schema_obj = SchemaJsonMixin()
@@ -135,7 +135,7 @@ def test_fields_present_10():
         "/a/c_1": 1,
         "/a/c_1/d": 2,
         "/b_1": 1,
-    }  # noqa
+    }
 
 
 def test_get_schema_deprecated_paths():
@@ -187,7 +187,7 @@ def test_schema_dict_fields_generator_release_schema_deprecated_fields():
             "common",
             "release_schema_deprecated_fields.json",
         )
-    ) as fp:  # noqa
+    ) as fp:
         json_schema = json.load(fp)
 
     data = sorted(set(schema_dict_fields_generator(json_schema)))
@@ -216,7 +216,7 @@ def test_schema_dict_fields_generator_schema_with_list_and_oneof():
             "common",
             "schema_with_list_and_oneof.json",
         )
-    ) as fp:  # noqa
+    ) as fp:
         json_schema = json.load(fp)
 
     data = sorted(set(schema_dict_fields_generator(json_schema)))
@@ -250,7 +250,7 @@ def test_fields_present_generator_tenders_releases_2_releases():
             "common",
             "tenders_releases_2_releases.json",
         )
-    ) as fp:  # noqa
+    ) as fp:
         json_schema = json.load(fp)
 
     data = sorted(set(key for key, _ in fields_present_generator(json_schema)))
@@ -303,7 +303,7 @@ def test_fields_present_generator_data_root_is_list():
             "common",
             "data_root_is_list.json",
         )
-    ) as fp:  # noqa
+    ) as fp:
         json_schema = json.load(fp)
 
     data = sorted(set(key for key, _ in fields_present_generator(json_schema)))
