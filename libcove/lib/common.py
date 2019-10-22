@@ -1,27 +1,26 @@
-import json
-import jsonref
-import requests
-import csv
-import functools
-import os
-import re
 import collections
+import csv
 import datetime
 import fcntl
-
-from cached_property import cached_property
-from .tools import get_request, decimal_default
-from urllib.parse import urlparse, urljoin
+import functools
+import json
+import os
+import re
 from collections import OrderedDict
+from urllib.parse import urljoin, urlparse
+
+import jsonref
+import jsonschema.validators
+import requests
+from cached_property import cached_property
+from django.utils.html import conditional_escape, escape, format_html
 from flattentool import unflatten
 from flattentool.schema import get_property_type_set
 from jsonschema import FormatChecker, RefResolver
 from jsonschema.exceptions import ValidationError
-import jsonschema.validators
+
 from .exceptions import cove_spreadsheet_conversion_error
-
-
-from django.utils.html import escape, conditional_escape, format_html
+from .tools import decimal_default, get_request
 
 # Because we will be changing items on this validator, it's important we take a copy!
 # Otherwise we could cause conflicts with other software in the same process.

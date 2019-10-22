@@ -1,7 +1,9 @@
-import pytest
 import os
-from libcove.lib.tools import get_file_type, ignore_errors
+
+import pytest
+
 from libcove.lib.exceptions import UnrecognisedFileType
+from libcove.lib.tools import get_file_type, ignore_errors
 
 
 @pytest.mark.parametrize("file_name", ["basic.xlsx", "basic.XLSX"])

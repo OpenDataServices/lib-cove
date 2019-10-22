@@ -1,12 +1,14 @@
+import json
+import logging
 import os
 import shutil
-import json
 import warnings
-import logging
+
 import flattentool
-from flattentool.json_input import BadlyFormedJSONError
-from .exceptions import cove_spreadsheet_conversion_error, CoveInputDataError
 from django.utils.translation import ugettext_lazy as _
+from flattentool.json_input import BadlyFormedJSONError
+
+from .exceptions import CoveInputDataError, cove_spreadsheet_conversion_error
 
 logger = logging.getLogger(__name__)
 

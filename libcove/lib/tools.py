@@ -1,6 +1,8 @@
-from functools import lru_cache, wraps
 from decimal import Decimal
+from functools import lru_cache, wraps
+
 import requests
+
 from .exceptions import UnrecognisedFileType
 
 
