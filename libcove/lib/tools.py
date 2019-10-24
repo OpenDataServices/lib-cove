@@ -1,6 +1,8 @@
-from functools import lru_cache, wraps
 from decimal import Decimal
+from functools import lru_cache, wraps
+
 import requests
+
 from .exceptions import UnrecognisedFileType
 
 
@@ -10,7 +12,11 @@ def cached_get_request(url):
 
 
 def get_request(url, config=None, force_cache=False):
-    if force_cache or (config and 'cache_all_requests' in config.config and config.config['cache_all_requests']):
+    if force_cache or (
+        config
+        and "cache_all_requests" in config.config
+        and config.config["cache_all_requests"]
+    ):
         return cached_get_request(url)
     else:
         return requests.get(url)
@@ -26,6 +32,7 @@ def ignore_errors(f):
                 return return_on_error
         else:
             return f(json_data, *args, **kwargs)
+
     return ignore
 
 
@@ -68,7 +75,7 @@ def get_no_exception(item, key, fallback):
 
 def update_docs(document_parent, counter):
     count = 0
-    documents = document_parent.get('documents', [])
+    documents = document_parent.get("documents", [])
     for document in documents:
         count += 1
         doc_type = document.get("documentType")
@@ -81,21 +88,21 @@ def get_file_type(file_name):
     """ Takes an filename (type string), and returns a string saying what type it is."""
     # Older versions of this could take DJango objects to.
     # Tho we don't really want to support that, put in a check for that.
-    if not isinstance(file_name, str) and hasattr(file_name, 'path'):
+    if not isinstance(file_name, str) and hasattr(file_name, "path"):
         file_name = file_name.path
     # First, just check the extension on the file name
-    if file_name.lower().endswith('.json'):
-        return 'json'
-    if file_name.lower().endswith('.xlsx'):
-        return 'xlsx'
-    if file_name.lower().endswith('.csv'):
-        return 'csv'
+    if file_name.lower().endswith(".json"):
+        return "json"
+    if file_name.lower().endswith(".xlsx"):
+        return "xlsx"
+    if file_name.lower().endswith(".csv"):
+        return "csv"
     # Try and load the first bit of the file to see if it's JSON?
     try:
-        with open(file_name, 'rb') as fp:
+        with open(file_name, "rb") as fp:
             first_byte = fp.read(1)
-            if first_byte in [b'{', b'[']:
-                return 'json'
+            if first_byte in [b"{", b"["]:
+                return "json"
     except FileNotFoundError:
         pass
     # All right, we give up.
