@@ -56,12 +56,19 @@ validation_error_template_lookup_safe = {
 
 
 def unique_ids(validator, ui, instance, schema):
+    # `records` key from the JSON schema doesn't get passed through to here, so
+    # we look out for this $ref — this may change if the way the schema files
+    # are structured changes.
+    if schema.get("items") == {"$ref": "#/definitions/record"}:
+        id_name = "ocid"
+    else:
+        id_name = "id"
     if ui and validator.is_type(instance, "array"):
         non_unique_ids = set()
         all_ids = set()
         for item in instance:
             try:
-                item_id = item.get("id")
+                item_id = item.get(id_name)
             except AttributeError:
                 # if item is not a dict
                 item_id = None
@@ -74,14 +81,12 @@ def unique_ids(validator, ui, instance, schema):
                     non_unique_ids.add(item_id)
                 all_ids.add(item_id)
             else:
-                # if there is any item without an id key, or the item is not a dict
-                # revert to original validator
-                for error in uniqueItemsValidator(validator, ui, instance, schema):
-                    yield error
+                msg = "Array has non-unique elements"
+                yield ValidationError(msg, instance=instance)
                 return
 
-        for non_unique_id in non_unique_ids:
-            msg = "Non-unique ID Values"
+        for non_unique_id in sorted(non_unique_ids):
+            msg = "Non-unique {} values".format(id_name)
             yield ValidationError(msg, instance=non_unique_id)
 
 
