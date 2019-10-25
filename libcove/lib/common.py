@@ -82,12 +82,16 @@ def unique_ids(validator, ui, instance, schema):
                 all_ids.add(item_id)
             else:
                 msg = "Array has non-unique elements"
-                yield ValidationError(msg, instance=instance)
+                err = ValidationError(msg, instance=instance)
+                err.error_id = "uniqueItems_no_ids"
+                yield err
                 return
 
         for non_unique_id in sorted(non_unique_ids):
             msg = "Non-unique {} values".format(id_name)
-            yield ValidationError(msg, instance=non_unique_id)
+            err = ValidationError(msg, instance=non_unique_id)
+            err.error_id = "uniqueItems_with_{}".format(id_name)
+            yield err
 
 
 def required_draft4(validator, required, instance, schema):
