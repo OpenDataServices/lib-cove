@@ -699,9 +699,12 @@ def get_schema_validation_errors(
         if cell_reference:
             first_reference = cell_reference[0]
             if len(first_reference) == 4:
-                value["sheet"], value["col_alpha"], value["row_number"], value[
-                    "header"
-                ] = first_reference
+                (
+                    value["sheet"],
+                    value["col_alpha"],
+                    value["row_number"],
+                    value["header"],
+                ) = first_reference
             if len(first_reference) == 2:
                 value["sheet"], value["row_number"] = first_reference
 
