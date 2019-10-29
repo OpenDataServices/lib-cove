@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Change uniqueItems error messages, to remove Python repr blocks [cove#1220](https://github.com/OpenDataServices/cove/issues/1220)
+
 ## [0.11.0] - 2019-10-08
 
 ### Added
