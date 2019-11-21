@@ -17,6 +17,7 @@ from django.utils.html import conditional_escape, escape, format_html
 from flattentool import unflatten
 from flattentool.schema import get_property_type_set
 from jsonschema import FormatChecker, RefResolver
+from jsonschema._utils import uniq
 from jsonschema.exceptions import ValidationError
 
 from .exceptions import cove_spreadsheet_conversion_error
@@ -81,11 +82,12 @@ def unique_ids(validator, ui, instance, schema):
                     non_unique_ids.add(item_id)
                 all_ids.add(item_id)
             else:
-                msg = "Array has non-unique elements"
-                err = ValidationError(msg, instance=instance)
-                err.error_id = "uniqueItems_no_ids"
-                yield err
-                return
+                if uniq(instance):
+                    msg = "Array has non-unique elements"
+                    err = ValidationError(msg, instance=instance)
+                    err.error_id = "uniqueItems_no_ids"
+                    yield err
+                    return
 
         for non_unique_id in sorted(non_unique_ids):
             msg = "Non-unique {} values".format(id_name)
