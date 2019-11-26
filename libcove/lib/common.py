@@ -82,7 +82,7 @@ def unique_ids(validator, ui, instance, schema):
                     non_unique_ids.add(item_id)
                 all_ids.add(item_id)
             else:
-                if uniq(instance):
+                if not uniq(instance):
                     msg = "Array has non-unique elements"
                     err = ValidationError(msg, instance=instance)
                     err.error_id = "uniqueItems_no_ids"
