@@ -7,11 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [0.12.1] - 2019-11-25
+## [0.12.2] - 2019-11-26
 
 ### Fixed
 
 - Fix uniqueItems error messages — don't report duplication where there isn't any [cove#1246](https://github.com/OpenDataServices/cove/issues/1246)
+
+## [0.12.1] - 2019-11-25
+
+### Fixed
+
+- Attempt to fix uniqueItems error messages, but accidentally report duplicates when there aren't any, and not when there are (fixed in 0.12.2) [cove#1246](https://github.com/OpenDataServices/cove/issues/1246)
 
 ## [0.12.0] - 2019-10-29
 
