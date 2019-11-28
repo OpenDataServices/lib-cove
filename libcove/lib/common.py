@@ -144,7 +144,11 @@ def oneOf_draft4(validator, oneOf, instance, schema):
         # as it lives in the parent.
         # It will not match the releases array in a release package, because
         # there is no oneOf.
-        if schema.get("title") == "Releases":
+        if (
+            schema.get("title") == "Releases"
+            or schema.get("description")
+            == "An array of linking identifiers or releases"
+        ):
             # If instance is not a list, or is a list of zero length, then
             # validating against either subschema will work.
             # Assume instance is an array of Linked releases, if there are no

@@ -409,13 +409,148 @@ class DummyRecordSchemaObj:
 
 
 @pytest.mark.parametrize(
-    "package_schema_filename,filename,validation_error_jsons_expected",
+    "package_schema_filename,filename,schema_subdir,validation_error_jsons_expected",
     [
-        ("release-package-schema.json", "releases_no_validation_errors.json", []),
-        ("record-package-schema.json", "records_no_validation_errors.json", []),
+        ("release-package-schema.json", "releases_no_validation_errors.json", "", []),
+        ("record-package-schema.json", "records_no_validation_errors.json", "", []),
         (
             "record-package-schema.json",
             "records_invalid_releases.json",
+            "",
+            [
+                {
+                    "error_id": None,
+                    "message": "'date' is missing but required within 'releases'",
+                    "message_safe": "<code>date</code> is missing but required within <code>releases</code>",
+                    "validator": "required",
+                    "assumption": "embedded_releases",
+                    "message_type": "required",
+                    "path_no_number": "records/releases",
+                    "header": "date",
+                    "header_extra": "releases/0",
+                    "null_clause": "",
+                    "values": [{"path": "records/2/releases/0"}],
+                },
+                {
+                    "error_id": None,
+                    "message": "'date' is missing but required within 'releases'",
+                    "message_safe": "<code>date</code> is missing but required within <code>releases</code>",
+                    "validator": "required",
+                    "assumption": "linked_releases",
+                    "message_type": "required",
+                    "path_no_number": "records/releases",
+                    "header": "date",
+                    "header_extra": "releases/0",
+                    "null_clause": "",
+                    "values": [
+                        {"path": "records/1/releases/0"},
+                        {"path": "records/3/releases/0"},
+                    ],
+                },
+                {
+                    "error_id": None,
+                    "message": "'initiationType' is missing but required within 'releases'",
+                    "message_safe": "<code>initiationType</code> is missing but required within <code>releases</code>",
+                    "validator": "required",
+                    "assumption": "embedded_releases",
+                    "message_type": "required",
+                    "path_no_number": "records/releases",
+                    "header": "initiationType",
+                    "header_extra": "releases/0",
+                    "null_clause": "",
+                    "values": [{"path": "records/2/releases/0"}],
+                },
+                {
+                    "error_id": None,
+                    "message": "'ocid' is missing but required within 'releases'",
+                    "message_safe": "<code>ocid</code> is missing but required within <code>releases</code>",
+                    "validator": "required",
+                    "assumption": "embedded_releases",
+                    "message_type": "required",
+                    "path_no_number": "records/releases",
+                    "header": "ocid",
+                    "header_extra": "releases/0",
+                    "null_clause": "",
+                    "values": [{"path": "records/2/releases/0"}],
+                },
+                {
+                    "error_id": None,
+                    "message": "'releases' is not a JSON array",
+                    "message_safe": "<code>releases</code> is not a JSON array",
+                    "validator": "type",
+                    "assumption": "linked_releases",
+                    "message_type": "array",
+                    "path_no_number": "records/releases",
+                    "header": "releases",
+                    "header_extra": "releases",
+                    "null_clause": "is not null, and",
+                    "values": [
+                        {"path": "records/6/releases", "value": "a string"},
+                        {"path": "records/7/releases", "value": None},
+                        {"path": "records/8/releases"},
+                    ],
+                },
+                {
+                    "error_id": None,
+                    "message": "'tag' is missing but required within 'releases'",
+                    "message_safe": "<code>tag</code> is missing but required within <code>releases</code>",
+                    "validator": "required",
+                    "assumption": "embedded_releases",
+                    "message_type": "required",
+                    "path_no_number": "records/releases",
+                    "header": "tag",
+                    "header_extra": "releases/0",
+                    "null_clause": "",
+                    "values": [{"path": "records/2/releases/0"}],
+                },
+                {
+                    "error_id": None,
+                    "message": "'url' is missing but required within 'releases'",
+                    "message_safe": "<code>url</code> is missing but required within <code>releases</code>",
+                    "validator": "required",
+                    "assumption": "linked_releases",
+                    "message_type": "required",
+                    "path_no_number": "records/releases",
+                    "header": "url",
+                    "header_extra": "releases/0",
+                    "null_clause": "",
+                    "values": [{"path": "records/1/releases/0"}],
+                },
+                {
+                    "error_id": "releases_both_embedded_and_linked",
+                    "message": "This array should contain either entirely embedded releases or linked releases. Embedded releases contain an 'id' whereas linked releases do not. Your releases contain a mixture.",
+                    "message_safe": "This array should contain either entirely embedded releases or linked releases. Embedded releases contain an &#39;id&#39; whereas linked releases do not. Your releases contain a mixture.",
+                    "validator": "oneOf",
+                    "assumption": None,
+                    "message_type": "oneOf",
+                    "path_no_number": "records/releases",
+                    "header": "releases",
+                    "header_extra": "releases",
+                    "null_clause": "",
+                    "values": [
+                        {"path": "records/4/releases"},
+                        {"path": "records/5/releases"},
+                    ],
+                },
+                {
+                    "error_id": None,
+                    "message": "[] is too short",
+                    "message_safe": "<code>[]</code> is too short. You must supply at least one value, or remove the item entirely (unless it’s required).",
+                    "validator": "minItems",
+                    "assumption": "linked_releases",
+                    "message_type": "minItems",
+                    "path_no_number": "records/releases",
+                    "header": "releases",
+                    "header_extra": "releases",
+                    "null_clause": "",
+                    "values": [{"path": "records/0/releases"}],
+                },
+            ],
+        ),
+        (
+            "record-package-schema.json",
+            "records_invalid_releases.json",
+            "1-0",
             [
                 {
                     "error_id": None,
@@ -549,6 +684,7 @@ class DummyRecordSchemaObj:
         (
             "release-package-schema.json",
             "releases_non_unique.json",
+            "",
             [
                 {
                     "message": "Non-unique id values",
@@ -571,6 +707,7 @@ class DummyRecordSchemaObj:
         (
             "record-package-schema.json",
             "records_non_unique.json",
+            "",
             [
                 {
                     "message": "Non-unique ocid values",
@@ -593,6 +730,7 @@ class DummyRecordSchemaObj:
         (
             "release-package-schema.json",
             "releases_non_unique_no_id.json",
+            "",
             [
                 {
                     "message": "'id' is missing but required",
@@ -638,6 +776,7 @@ class DummyRecordSchemaObj:
         (
             "record-package-schema.json",
             "records_non_unique_no_ocid.json",
+            "",
             [
                 {
                     "message": "'ocid' is missing but required",
@@ -685,6 +824,7 @@ class DummyRecordSchemaObj:
         (
             "release-package-schema.json",
             "releases_unique.json",
+            "",
             [
                 {
                     "message": "'id' is missing but required",
@@ -717,6 +857,7 @@ class DummyRecordSchemaObj:
         (
             "record-package-schema.json",
             "records_unique.json",
+            "",
             [
                 {
                     "message": "'ocid' is missing but required",
@@ -749,10 +890,14 @@ class DummyRecordSchemaObj:
     ],
 )
 def test_validation_release_or_record_package(
-    package_schema_filename, filename, validation_error_jsons_expected
+    package_schema_filename, filename, validation_error_jsons_expected, schema_subdir
 ):
     schema_host = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), "fixtures", "common", ""
+        os.path.dirname(os.path.realpath(__file__)),
+        "fixtures",
+        "common",
+        schema_subdir,
+        "",
     )
     with open(os.path.join(schema_host, filename)) as fp:
         invalid_record_package = json.load(fp)

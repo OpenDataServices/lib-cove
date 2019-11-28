@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Extend new oneOf validation messages to OCDS 1.0 files [cove#895](https://github.com/OpenDataServices/cove/issues/895#issuecomment-558721218)
+
 ## [0.12.2] - 2019-11-26
 
 ### Fixed
