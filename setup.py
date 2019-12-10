@@ -13,7 +13,7 @@ setup(
         "jsonref",
         "jsonschema",
         "CommonMark",
-        "Django",
+        "Django>=1.11.23,<1.12",
         "bleach",
         "requests",
         "json-merge-patch",
