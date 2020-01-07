@@ -108,6 +108,7 @@ def test_convert_activity_xml_1():
         assert row1[0] == "GBP"
         assert row1[1] == "GB-TEST-13-example_ODSC_2019"
 
+
 def test_convert_org_xml_1():
 
     cove_temp_folder = tempfile.mkdtemp(
@@ -161,6 +162,7 @@ def test_convert_org_xml_1():
         row1 = next(csvreader)
         assert row1[3] == "GB-GOV-1"
         assert row1[4] == "UK Department for International Development"
+
 
 def test_convert_json_root_is_list_1():
 
