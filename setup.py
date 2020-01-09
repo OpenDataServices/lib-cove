@@ -18,7 +18,7 @@ setup(
         "requests",
         "json-merge-patch",
         "cached-property",
-        # TODO Should also have flatten-tool >= v0.5.0 - that is currently in requirements instead.
+        "flattentool>=0.5.0",
     ],
     classifiers=[
         "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)"
