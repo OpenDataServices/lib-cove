@@ -131,6 +131,7 @@ def test_convert_org_xml_1():
         flatten=True,
         xml=True,
         root_list_path="iati-organisation",
+        root_id='organisation-identifier',
     )
 
     assert output["converted_url"] == "/flattened"
@@ -156,11 +157,11 @@ def test_convert_org_xml_1():
         csvreader = csv.reader(csvfile)
 
         header = next(csvreader)
-        assert header[3] == "organisation-identifier"
+        assert header[0] == "organisation-identifier"
         assert header[4] == "name/narrative"
 
         row1 = next(csvreader)
-        assert row1[3] == "GB-GOV-1"
+        assert row1[0] == "GB-GOV-1"
         assert row1[4] == "UK Department for International Development"
 
 
