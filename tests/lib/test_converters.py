@@ -131,7 +131,7 @@ def test_convert_org_xml_1():
         flatten=True,
         xml=True,
         root_list_path="iati-organisation",
-        root_id='organisation-identifier',
+        root_id="organisation-identifier",
     )
 
     assert output["converted_url"] == "/flattened"
