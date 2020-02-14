@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.14.0] - 2020-02-13
+
+### Added
+
+- Depend on rfc3987 and strict-rfc3339 (optional dependencies of jsonschema) in order to validate URIs and date-times correctly [lib-cove-bods#54](https://github.com/openownership/lib-cove-bods/pull/54#issuecomment-585303356)
+
 ## [0.13.0] - 2020-01-09
 
 ### Added
