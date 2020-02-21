@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-organisations version="2.03" generated-datetime="2019-07-24T12:10:00">
+  <iati-organisation last-updated-datetime="2019-07-24T12:10:00" xml:lang="en" default-currency="GBP">
+  <organisation-identifier>GB-GOV-1</organisation-identifier>
+  <name>
+	<narrative>UK Department for International Development</narrative>
+  </name>
+  <reporting-org ref="GB-GOV-1" type="10">
+	<narrative>UK Department for International Development</narrative>
+  </reporting-org>
+  <total-budget status="1">
+    <period-start iso-date="2019-04-01"/>
+    <period-end iso-date="2020-03-31"/>
+    <value value-date="2019-07-11">10574558000</value>
+  </total-budget>
+</iati-organisation>
+</iati-organisations>
