@@ -23,7 +23,7 @@ class UnrecognisedFileType(CoveInputDataError):
         "link": "index",
         "link_text": _("Try Again"),
         "msg": _(
-            "We did not recognise the file type.\n\nWe can only process json, csv and xlsx files."
+            "We did not recognise the file type.\n\nWe can only process json, csv, ods and xlsx files."
         ),
     }
 
