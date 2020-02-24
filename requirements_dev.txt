@@ -1,4 +1,0 @@
--e .
-pytest
-flake8
-isort

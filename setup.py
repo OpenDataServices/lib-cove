@@ -24,6 +24,7 @@ setup(
         # Required for jsonschema to validate date-time
         "strict-rfc3339",
     ],
+    extras_require={"dev": ["pytest", "flake8", "isort"]},
     classifiers=[
         "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)"
     ],
