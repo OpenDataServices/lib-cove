@@ -95,6 +95,8 @@ def get_file_type(file_name):
         return "json"
     if file_name.lower().endswith(".xlsx"):
         return "xlsx"
+    if file_name.lower().endswith(".ods"):
+        return "ods"
     if file_name.lower().endswith(".csv"):
         return "csv"
     # Try and load the first bit of the file to see if it's JSON?
