@@ -724,7 +724,7 @@ def get_schema_validation_errors(
             if isinstance(e.path[-1], int) and len(e.path) >= 2:
                 # We're dealing with elements in an array of items at this point
                 pre_header = "Array Element "
-                header_extra = "{}/{}".format(e.path[-2], e.path[-1])
+                header_extra = "{}/[number]".format(e.path[-2])
 
         null_clause = ""
         validator_type = e.validator
