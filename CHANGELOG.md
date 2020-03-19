@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.16.0] - 2020-03-19
+
+### Fixed
+
 - Fix grouping of validation errors https://github.com/OpenDataServices/cove/issues/1225
 
 ## [0.15.0] - 2020-02-24
