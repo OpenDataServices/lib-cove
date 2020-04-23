@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="libcove",
-    version="0.16.1",
+    version="0.17.0",
     author="Open Data Services",
     author_email="code@opendataservices.coop",
     url="https://github.com/OpenDataServices/lib-cove",
@@ -13,7 +13,7 @@ setup(
         "jsonref",
         "jsonschema",
         "CommonMark",
-        "Django>=1.11.23,<1.12",
+        "Django<2.3",
         "bleach",
         "requests",
         "json-merge-patch",
