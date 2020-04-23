@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.17.0] - 2020-04-23
+
+### Changed
+
+- Update Django to 2.2 LTS
+
 ## [0.16.1] - 2020-03-19
 
 ### Note
