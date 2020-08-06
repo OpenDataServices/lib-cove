@@ -97,6 +97,13 @@ def unique_ids(validator, ui, instance, schema):
 
 
 def required_draft4(validator, required, instance, schema):
+    """
+    required validator from
+    https://github.com/Julian/jsonschema/blob/7a2cc2faf04a1182d3901bd907e87a746671f879/jsonschema/_validators.py#L291-L296
+
+    Modified to return a validation message that is just the missing property, so that we can process that later.
+
+    """
     if not validator.is_type(instance, "object"):
         return
     for property in required:
@@ -469,7 +476,8 @@ def common_checks_context(
         ) as heading_source_map_fp:
             heading_source_map = json.load(heading_source_map_fp)
 
-    # IMPORTANT: If you change this filename, you must change it also in cove/views.py
+    # IMPORTANT: If you change this filename, you must change it also in lib-cove-web
+    # https://github.com/OpenDataServices/lib-cove-web/blob/master/cove/views.py#L38
     # Otherwsie people can upload a file with this name and inject HTML.
     validation_errors_path = os.path.join(upload_dir, "validation_errors-3.json")
     if os.path.exists(validation_errors_path):
