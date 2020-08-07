@@ -174,35 +174,35 @@ validator.VALIDATORS["oneOf"] = oneOf_draft4
 # * config, an instance of a config class.
 class SchemaJsonMixin:
     @cached_property
-    def release_schema_str(self):
+    def schema_str(self):
         response = get_request(
-            self.release_schema_url,
+            self.schema_url,
             config=getattr(self, "config", None),
             force_cache=getattr(self, "cache_schema", False),
         )
         return response.text
 
     @cached_property
-    def release_pkg_schema_str(self):
-        uri_scheme = urlparse(self.release_pkg_schema_url).scheme
+    def pkg_schema_str(self):
+        uri_scheme = urlparse(self.pkg_schema_url).scheme
         if uri_scheme == "http" or uri_scheme == "https":
             response = get_request(
-                self.release_pkg_schema_url,
+                self.pkg_schema_url,
                 config=getattr(self, "config", None),
                 force_cache=getattr(self, "cache_schema", False),
             )
             return response.text
         else:
-            with open(self.release_pkg_schema_url) as fp:
+            with open(self.pkg_schema_url) as fp:
                 return fp.read()
 
     @property
-    def _release_schema_obj(self):
-        return json.loads(self.release_schema_str, object_pairs_hook=OrderedDict)
+    def _schema_obj(self):
+        return json.loads(self.schema_str, object_pairs_hook=OrderedDict)
 
     @property
-    def _release_pkg_schema_obj(self):
-        return json.loads(self.release_pkg_schema_str)
+    def _pkg_schema_obj(self):
+        return json.loads(self.pkg_schema_str)
 
     def deref_schema(self, schema_str):
         try:
@@ -211,20 +211,18 @@ class SchemaJsonMixin:
             self.json_deref_error = e.message
             return {}
 
-    def get_release_schema_obj(self, deref=False):
+    def get_schema_obj(self, deref=False):
         if deref:
-            return self.deref_schema(self.release_schema_str)
-        return self._release_schema_obj
+            return self.deref_schema(self.schema_str)
+        return self._schema_obj
 
-    def get_release_pkg_schema_obj(self, deref=False):
+    def get_pkg_schema_obj(self, deref=False):
         if deref:
-            return self.deref_schema(self.release_pkg_schema_str)
-        return self._release_pkg_schema_obj
+            return self.deref_schema(self.pkg_schema_str)
+        return self._pkg_schema_obj
 
-    def get_release_pkg_schema_fields(self):
-        return set(
-            schema_dict_fields_generator(self.get_release_pkg_schema_obj(deref=True))
-        )
+    def get_pkg_schema_fields(self):
+        return set(schema_dict_fields_generator(self.get_pkg_schema_obj(deref=True)))
 
 
 def schema_dict_fields_generator(schema_dict):
@@ -269,9 +267,7 @@ def get_schema_codelist_paths(
         codelist_paths = {}
 
     if schema_obj:
-        obj = schema_obj.get_release_pkg_schema_obj(
-            deref=True, use_extensions=use_extensions
-        )
+        obj = schema_obj.get_pkg_schema_obj(deref=True, use_extensions=use_extensions)
 
     properties = obj.get("properties", {})
     if not isinstance(properties, dict):
@@ -377,10 +373,7 @@ def common_checks_context(
                 }
             )
 
-    if schema_name == "record-package-schema.json":
-        schema_fields = schema_obj.get_record_pkg_schema_fields()
-    else:
-        schema_fields = schema_obj.get_release_pkg_schema_fields()
+    schema_fields = schema_obj.get_pkg_schema_fields()
 
     additional_fields_all = get_additional_fields_info(
         json_data, schema_fields, context, fields_regex=fields_regex
@@ -460,7 +453,7 @@ def common_checks_context(
 
     context.update(
         {
-            "schema_url": schema_obj.release_pkg_schema_url,
+            "schema_url": schema_obj.pkg_schema_url,
             "extensions": extensions,
             "validation_errors": sorted(validation_errors.items()),
             "validation_errors_count": sum(
@@ -597,10 +590,7 @@ def get_counts_additional_fields(
 ):
 
     if not additional_fields_info:
-        if schema_name == "record-package-schema.json":
-            schema_fields = schema_obj.get_record_pkg_schema_fields()
-        else:
-            schema_fields = schema_obj.get_release_pkg_schema_fields()
+        schema_fields = schema_obj.get_pkg_schema_fields()
         additional_fields_info = get_additional_fields_info(
             json_data, schema_fields, context, fields_regex=False
         )
@@ -620,10 +610,7 @@ def get_schema_validation_errors(
     heading_src_map,
     extra_checkers=None,
 ):
-    if schema_name == "record-package-schema.json":
-        pkg_schema_obj = schema_obj.get_record_pkg_schema_obj()
-    else:
-        pkg_schema_obj = schema_obj.get_release_pkg_schema_obj()
+    pkg_schema_obj = schema_obj.get_pkg_schema_obj()
 
     validation_errors = collections.defaultdict(list)
     format_checker = FormatChecker()
@@ -636,7 +623,7 @@ def get_schema_validation_errors(
             pkg_schema_obj,
             schema_url=schema_obj.schema_host,
             schema_file=schema_obj.extended_schema_file,
-            file_schema_name=schema_obj.release_schema_name,
+            file_schema_name=schema_obj.schema_name,
         )
     else:
         resolver = CustomRefResolver(
@@ -1019,7 +1006,7 @@ def _get_schema_deprecated_paths(
         deprecated_paths = []
 
     if schema_obj:
-        obj = schema_obj.get_release_pkg_schema_obj(deref=True)
+        obj = schema_obj.get_pkg_schema_obj(deref=True)
 
     properties = obj.get("properties", {})
     if not isinstance(properties, dict):
@@ -1080,7 +1067,7 @@ def _get_schema_non_required_ids(
     if id_paths is None:
         id_paths = []
     if schema_obj:
-        obj = schema_obj.get_release_pkg_schema_obj(deref=True)
+        obj = schema_obj.get_pkg_schema_obj(deref=True)
 
     properties = obj.get("properties", {})
     no_required_id = "id" not in obj.get("required", [])

@@ -36,7 +36,7 @@ def test_get_json_data_deprecated_fields():
     schema_obj.release_pkg_schema_name = (
         "release_package_schema_ref_release_schema_deprecated_fields.json"
     )
-    schema_obj.release_pkg_schema_url = os.path.join(
+    schema_obj.pkg_schema_url = os.path.join(
         schema_obj.schema_host, schema_obj.release_pkg_schema_name
     )
     json_data_paths = get_json_data_generic_paths(json_data_w_deprecations)
@@ -148,7 +148,7 @@ def test_get_schema_deprecated_paths():
     schema_obj.release_pkg_schema_name = (
         "release_package_schema_ref_release_schema_deprecated_fields.json"
     )
-    schema_obj.release_pkg_schema_url = os.path.join(
+    schema_obj.pkg_schema_url = os.path.join(
         schema_obj.schema_host, schema_obj.release_pkg_schema_name
     )
     deprecated_paths = _get_schema_deprecated_paths(schema_obj)
@@ -393,17 +393,22 @@ def test_get_orgids_prefixes_live():
     assert len(data) > 150
 
 
+class DummyReleaseSchemaObj:
+    def __init__(self, schema_host):
+        self.schema_host = schema_host
+
+    def get_pkg_schema_obj(self):
+        with open(os.path.join(self.schema_host, "release-package-schema.json")) as fp:
+            schema_json = json.load(fp)
+        return schema_json
+
+
 class DummyRecordSchemaObj:
     def __init__(self, schema_host):
         self.schema_host = schema_host
 
-    def get_record_pkg_schema_obj(self):
+    def get_pkg_schema_obj(self):
         with open(os.path.join(self.schema_host, "record-package-schema.json")) as fp:
-            schema_json = json.load(fp)
-        return schema_json
-
-    def get_release_pkg_schema_obj(self):
-        with open(os.path.join(self.schema_host, "release-package-schema.json")) as fp:
             schema_json = json.load(fp)
         return schema_json
 
@@ -557,14 +562,15 @@ def test_validation_release_or_record_package(
         "",
     )
     with open(os.path.join(schema_host, filename)) as fp:
-        invalid_record_package = json.load(fp)
+        json_data = json.load(fp)
+
+    if isinstance(json_data, dict) and "records" in json_data:
+        DummySchemaObj = DummyRecordSchemaObj
+    else:
+        DummySchemaObj = DummyReleaseSchemaObj
 
     validation_errors = get_schema_validation_errors(
-        invalid_record_package,
-        DummyRecordSchemaObj(schema_host),
-        package_schema_filename,
-        {},
-        {},
+        json_data, DummySchemaObj(schema_host), package_schema_filename, {}, {},
     )
 
     validation_error_jsons = []
