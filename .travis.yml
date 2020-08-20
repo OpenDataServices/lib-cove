@@ -8,7 +8,7 @@ python:
 install:
   # Black only runs under Python >= 3.6
   - if [[ $TRAVIS_PYTHON_VERSION != 3.5 ]]; then pip install black; fi
-  - pip install -r requirements_dev.txt
+  - pip install -e .[dev]
 script:
   - if [[ $TRAVIS_PYTHON_VERSION != 3.5 ]]; then black --check *.py */; fi
   - isort --check-only --recursive *.py */
