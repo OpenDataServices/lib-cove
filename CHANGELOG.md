@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.18.0] - 2020-08-26
+
 ### Fixed
 
 - No longer crashes when null appears in an array https://github.com/OpenDataServices/cove/issues/1287
