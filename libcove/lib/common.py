@@ -968,6 +968,8 @@ def get_json_data_missing_ids(json_data_paths, schema_obj):
             for specific_path in json_data_paths[generic_no_id]:
                 if type(specific_path[-1]) != int:
                     continue
+                if not isinstance(json_data_paths[generic_no_id][specific_path], dict):
+                    continue
                 if "id" not in json_data_paths[generic_no_id][specific_path]:
                     missing_ids_paths.append(
                         "/".join(list(map(lambda i: str(i), specific_path)) + ["id"])
