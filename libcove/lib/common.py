@@ -56,14 +56,7 @@ validation_error_template_lookup_safe = {
 }
 
 
-def unique_ids(validator, ui, instance, schema):
-    # `records` key from the JSON schema doesn't get passed through to here, so
-    # we look out for this $ref — this may change if the way the schema files
-    # are structured changes.
-    if schema.get("items") == {"$ref": "#/definitions/record"}:
-        id_name = "ocid"
-    else:
-        id_name = "id"
+def unique_ids(validator, ui, instance, schema, id_name="id"):
     if ui and validator.is_type(instance, "array"):
         non_unique_ids = set()
         all_ids = set()
@@ -97,6 +90,13 @@ def unique_ids(validator, ui, instance, schema):
 
 
 def required_draft4(validator, required, instance, schema):
+    """
+    required validator from
+    https://github.com/Julian/jsonschema/blob/7a2cc2faf04a1182d3901bd907e87a746671f879/jsonschema/_validators.py#L291-L296
+
+    Modified to return a validation message that is just the missing property, so that we can process that later.
+
+    """
     if not validator.is_type(instance, "object"):
         return
     for property in required:
@@ -140,52 +140,6 @@ def oneOf_draft4(validator, oneOf, instance, schema):
             else:
                 yield ValidationError("statementType", validator="required")
                 break
-        # We check the title, because we don't have access to the field name,
-        # as it lives in the parent.
-        # It will not match the releases array in a release package, because
-        # there is no oneOf.
-        if (
-            schema.get("title") == "Releases"
-            or schema.get("description")
-            == "An array of linking identifiers or releases"
-        ):
-            # If instance is not a list, or is a list of zero length, then
-            # validating against either subschema will work.
-            # Assume instance is an array of Linked releases, if there are no
-            # "id"s in any of the releases.
-            if type(instance) is not list or all(
-                "id" not in release for release in instance
-            ):
-                if (
-                    "properties" in subschema.get("items", {})
-                    and "id" not in subschema["items"]["properties"]
-                ):
-                    for err in errs:
-                        err.assumption = "linked_releases"
-                        yield err
-                    return
-            # Assume instance is an array of Embedded releases, if there is an
-            # "id" in each of the releases
-            elif all("id" in release for release in instance):
-                if "id" in subschema.get("items", {}).get(
-                    "properties", {}
-                ) or subschema.get("items", {}).get("$ref", "").endswith(
-                    "release-schema.json"
-                ):
-                    for err in errs:
-                        err.assumption = "embedded_releases"
-                        yield err
-                    return
-            else:
-                err = ValidationError(
-                    "This array should contain either entirely embedded releases or "
-                    "linked releases. Embedded releases contain an 'id' whereas linked "
-                    "releases do not. Your releases contain a mixture."
-                )
-                err.error_id = "releases_both_embedded_and_linked"
-                yield err
-                break
-
         all_errors.extend(errs)
     else:
         if validStatementTypes:
@@ -220,35 +174,35 @@ validator.VALIDATORS["oneOf"] = oneOf_draft4
 # * config, an instance of a config class.
 class SchemaJsonMixin:
     @cached_property
-    def release_schema_str(self):
+    def schema_str(self):
         response = get_request(
-            self.release_schema_url,
+            self.schema_url,
             config=getattr(self, "config", None),
             force_cache=getattr(self, "cache_schema", False),
         )
         return response.text
 
     @cached_property
-    def release_pkg_schema_str(self):
-        uri_scheme = urlparse(self.release_pkg_schema_url).scheme
+    def pkg_schema_str(self):
+        uri_scheme = urlparse(self.pkg_schema_url).scheme
         if uri_scheme == "http" or uri_scheme == "https":
             response = get_request(
-                self.release_pkg_schema_url,
+                self.pkg_schema_url,
                 config=getattr(self, "config", None),
                 force_cache=getattr(self, "cache_schema", False),
             )
             return response.text
         else:
-            with open(self.release_pkg_schema_url) as fp:
+            with open(self.pkg_schema_url) as fp:
                 return fp.read()
 
     @property
-    def _release_schema_obj(self):
-        return json.loads(self.release_schema_str, object_pairs_hook=OrderedDict)
+    def _schema_obj(self):
+        return json.loads(self.schema_str, object_pairs_hook=OrderedDict)
 
     @property
-    def _release_pkg_schema_obj(self):
-        return json.loads(self.release_pkg_schema_str)
+    def _pkg_schema_obj(self):
+        return json.loads(self.pkg_schema_str)
 
     def deref_schema(self, schema_str):
         try:
@@ -257,20 +211,18 @@ class SchemaJsonMixin:
             self.json_deref_error = e.message
             return {}
 
-    def get_release_schema_obj(self, deref=False):
+    def get_schema_obj(self, deref=False):
         if deref:
-            return self.deref_schema(self.release_schema_str)
-        return self._release_schema_obj
+            return self.deref_schema(self.schema_str)
+        return self._schema_obj
 
-    def get_release_pkg_schema_obj(self, deref=False):
+    def get_pkg_schema_obj(self, deref=False):
         if deref:
-            return self.deref_schema(self.release_pkg_schema_str)
-        return self._release_pkg_schema_obj
+            return self.deref_schema(self.pkg_schema_str)
+        return self._pkg_schema_obj
 
-    def get_release_pkg_schema_fields(self):
-        return set(
-            schema_dict_fields_generator(self.get_release_pkg_schema_obj(deref=True))
-        )
+    def get_pkg_schema_fields(self):
+        return set(schema_dict_fields_generator(self.get_pkg_schema_obj(deref=True)))
 
 
 def schema_dict_fields_generator(schema_dict):
@@ -315,9 +267,7 @@ def get_schema_codelist_paths(
         codelist_paths = {}
 
     if schema_obj:
-        obj = schema_obj.get_release_pkg_schema_obj(
-            deref=True, use_extensions=use_extensions
-        )
+        obj = schema_obj.get_pkg_schema_obj(deref=True, use_extensions=use_extensions)
 
     properties = obj.get("properties", {})
     if not isinstance(properties, dict):
@@ -423,10 +373,7 @@ def common_checks_context(
                 }
             )
 
-    if schema_name == "record-package-schema.json":
-        schema_fields = schema_obj.get_record_pkg_schema_fields()
-    else:
-        schema_fields = schema_obj.get_release_pkg_schema_fields()
+    schema_fields = schema_obj.get_pkg_schema_fields()
 
     additional_fields_all = get_additional_fields_info(
         json_data, schema_fields, context, fields_regex=fields_regex
@@ -469,7 +416,8 @@ def common_checks_context(
         ) as heading_source_map_fp:
             heading_source_map = json.load(heading_source_map_fp)
 
-    # IMPORTANT: If you change this filename, you must change it also in cove/views.py
+    # IMPORTANT: If you change this filename, you must change it also in lib-cove-web
+    # https://github.com/OpenDataServices/lib-cove-web/blob/master/cove/views.py#L38
     # Otherwsie people can upload a file with this name and inject HTML.
     validation_errors_path = os.path.join(upload_dir, "validation_errors-3.json")
     if os.path.exists(validation_errors_path):
@@ -505,7 +453,7 @@ def common_checks_context(
 
     context.update(
         {
-            "schema_url": schema_obj.release_pkg_schema_url,
+            "schema_url": schema_obj.pkg_schema_url,
             "extensions": extensions,
             "validation_errors": sorted(validation_errors.items()),
             "validation_errors_count": sum(
@@ -642,10 +590,7 @@ def get_counts_additional_fields(
 ):
 
     if not additional_fields_info:
-        if schema_name == "record-package-schema.json":
-            schema_fields = schema_obj.get_record_pkg_schema_fields()
-        else:
-            schema_fields = schema_obj.get_release_pkg_schema_fields()
+        schema_fields = schema_obj.get_pkg_schema_fields()
         additional_fields_info = get_additional_fields_info(
             json_data, schema_fields, context, fields_regex=False
         )
@@ -665,10 +610,7 @@ def get_schema_validation_errors(
     heading_src_map,
     extra_checkers=None,
 ):
-    if schema_name == "record-package-schema.json":
-        pkg_schema_obj = schema_obj.get_record_pkg_schema_obj()
-    else:
-        pkg_schema_obj = schema_obj.get_release_pkg_schema_obj()
+    pkg_schema_obj = schema_obj.get_pkg_schema_obj()
 
     validation_errors = collections.defaultdict(list)
     format_checker = FormatChecker()
@@ -681,7 +623,7 @@ def get_schema_validation_errors(
             pkg_schema_obj,
             schema_url=schema_obj.schema_host,
             schema_file=schema_obj.extended_schema_file,
-            file_schema_name=schema_obj.release_schema_name,
+            file_schema_name=schema_obj.schema_name,
         )
     else:
         resolver = CustomRefResolver(
@@ -1064,7 +1006,7 @@ def _get_schema_deprecated_paths(
         deprecated_paths = []
 
     if schema_obj:
-        obj = schema_obj.get_release_pkg_schema_obj(deref=True)
+        obj = schema_obj.get_pkg_schema_obj(deref=True)
 
     properties = obj.get("properties", {})
     if not isinstance(properties, dict):
@@ -1125,7 +1067,7 @@ def _get_schema_non_required_ids(
     if id_paths is None:
         id_paths = []
     if schema_obj:
-        obj = schema_obj.get_release_pkg_schema_obj(deref=True)
+        obj = schema_obj.get_pkg_schema_obj(deref=True)
 
     properties = obj.get("properties", {})
     no_required_id = "id" not in obj.get("required", [])
