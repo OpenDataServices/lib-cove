@@ -1119,7 +1119,7 @@ def fields_present_generator(json_data, prefix=""):
 
 
 def add_is_codelist(obj):
-    """ This is needed so that we can detect enums that are arrays as the jsonschema library does not
+    """This is needed so that we can detect enums that are arrays as the jsonschema library does not
     give you any parent information and the codelist property is on the parent in this case. Only applies to
     release.tag in core schema at the moment."""
 

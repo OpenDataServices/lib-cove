@@ -570,7 +570,11 @@ def test_validation_release_or_record_package(
         DummySchemaObj = DummyReleaseSchemaObj
 
     validation_errors = get_schema_validation_errors(
-        json_data, DummySchemaObj(schema_host), package_schema_filename, {}, {},
+        json_data,
+        DummySchemaObj(schema_host),
+        package_schema_filename,
+        {},
+        {},
     )
 
     validation_error_jsons = []
