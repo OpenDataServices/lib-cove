@@ -18,6 +18,7 @@ from flattentool import unflatten
 from flattentool.schema import get_property_type_set
 from jsonschema import FormatChecker, RefResolver
 from jsonschema._utils import uniq
+from jsonschema.compat import urlopen, urlsplit
 from jsonschema.exceptions import ValidationError
 
 from .exceptions import cove_spreadsheet_conversion_error
@@ -621,13 +622,17 @@ def get_schema_validation_errors(
         resolver = CustomRefResolver(
             "",
             pkg_schema_obj,
+            config=schema_obj.config,
             schema_url=schema_obj.schema_host,
             schema_file=schema_obj.extended_schema_file,
             file_schema_name=schema_obj.schema_name,
         )
     else:
         resolver = CustomRefResolver(
-            "", pkg_schema_obj, schema_url=schema_obj.schema_host
+            "",
+            pkg_schema_obj,
+            config=schema_obj.config,
+            schema_url=schema_obj.schema_host,
         )
 
     our_validator = validator(
@@ -970,6 +975,7 @@ class CustomRefResolver(RefResolver):
         # the name of the schema file is appended to this to make the full url.
         # this is ignored when you supply a file
         self.schema_url = kw.pop("schema_url", "")
+        self.config = kw.pop("config", "")
         super().__init__(*args, **kw)
 
     def resolve_remote(self, uri):
@@ -984,7 +990,23 @@ class CustomRefResolver(RefResolver):
         if document:
             return document
         if uri.startswith("http"):
-            return super().resolve_remote(uri)
+            # This branch of the if-statement in-lines `RefResolver.resolve_remote()`, but using `get_request()`.
+            scheme = urlsplit(uri).scheme
+
+            if scheme in self.handlers:
+                result = self.handlers[scheme](uri)
+            elif scheme in [u"http", u"https"]:
+                # Requests has support for detecting the correct encoding of
+                # json over http
+                result = get_request(uri, config=self.config).json()
+            else:
+                # Otherwise, pass off to urllib and assume utf-8
+                with urlopen(uri) as url:
+                    result = json.loads(url.read().decode("utf-8"))
+
+            if self.cache_remote:
+                self.store[uri] = result
+            return result
         else:
             with open(uri) as schema_file:
                 result = json.load(schema_file)
