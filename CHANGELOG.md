@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- CustomRefResolver and CustomJsonrefLoader now respect `cache_all_requests` in the config
+
 ## [0.18.0] - 2020-08-26
 
 ### Fixed
