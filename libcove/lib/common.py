@@ -207,7 +207,9 @@ class SchemaJsonMixin:
 
     def deref_schema(self, schema_str):
         try:
-            return _deref_schema(schema_str, self.schema_host)
+            config = getattr(self, "config", None)
+            cache = config and config.config["cache_all_requests"]
+            return _deref_schema(schema_str, self.schema_host, cache=cache)
         except jsonref.JsonRefError as e:
             self.json_deref_error = e.message
             return {}
@@ -319,8 +321,8 @@ def load_core_codelists(codelist_url, unique_files, config=None):
 
 
 @functools.lru_cache()
-def _deref_schema(schema_str, schema_host):
-    loader = CustomJsonrefLoader(schema_url=schema_host)
+def _deref_schema(schema_str, schema_host, cache=None):
+    loader = CustomJsonrefLoader(schema_url=schema_host, cache=cache)
     deref_obj = jsonref.loads(schema_str, loader=loader, object_pairs_hook=OrderedDict)
     # Force evaluation of jsonref.loads here
     repr(deref_obj)
@@ -331,16 +333,19 @@ class CustomJsonrefLoader(jsonref.JsonLoader):
     """This ref loader is only for use with the jsonref library
     and NOT jsonschema."""
 
-    def __init__(self, schema_url, **kwargs):
+    def __init__(self, schema_url, cache=None, **kwargs):
         self.schema_url = schema_url
+        self.config = collections.namedtuple("LibCoveConfig", "config")
+        self.config.config = {"cache_all_requests": cache}
         super().__init__(**kwargs)
 
     def get_remote_json(self, uri, **kwargs):
         # ignore url in ref apart from last part
         uri_info = urlparse(uri)
         uri = urljoin(self.schema_url, os.path.basename(uri_info.path))
+
         if "http" in uri_info.scheme:
-            return super().get_remote_json(uri, **kwargs)
+            return get_request(uri, config=self.config).json(**kwargs)
         else:
             with open(uri) as schema_file:
                 return json.load(schema_file, **kwargs)
