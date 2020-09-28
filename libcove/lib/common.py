@@ -18,6 +18,7 @@ from flattentool import unflatten
 from flattentool.schema import get_property_type_set
 from jsonschema import FormatChecker, RefResolver
 from jsonschema._utils import uniq
+from jsonschema.compat import urlopen, urlsplit
 from jsonschema.exceptions import ValidationError
 
 from .exceptions import cove_spreadsheet_conversion_error
@@ -206,7 +207,9 @@ class SchemaJsonMixin:
 
     def deref_schema(self, schema_str):
         try:
-            return _deref_schema(schema_str, self.schema_host)
+            config = getattr(self, "config", None)
+            cache = config and config.config["cache_all_requests"]
+            return _deref_schema(schema_str, self.schema_host, cache=cache)
         except jsonref.JsonRefError as e:
             self.json_deref_error = e.message
             return {}
@@ -318,8 +321,8 @@ def load_core_codelists(codelist_url, unique_files, config=None):
 
 
 @functools.lru_cache()
-def _deref_schema(schema_str, schema_host):
-    loader = CustomJsonrefLoader(schema_url=schema_host)
+def _deref_schema(schema_str, schema_host, cache=None):
+    loader = CustomJsonrefLoader(schema_url=schema_host, cache=cache)
     deref_obj = jsonref.loads(schema_str, loader=loader, object_pairs_hook=OrderedDict)
     # Force evaluation of jsonref.loads here
     repr(deref_obj)
@@ -330,16 +333,19 @@ class CustomJsonrefLoader(jsonref.JsonLoader):
     """This ref loader is only for use with the jsonref library
     and NOT jsonschema."""
 
-    def __init__(self, schema_url, **kwargs):
+    def __init__(self, schema_url, cache=None, **kwargs):
         self.schema_url = schema_url
+        self.config = collections.namedtuple("LibCoveConfig", "config")
+        self.config.config = {"cache_all_requests": cache}
         super().__init__(**kwargs)
 
     def get_remote_json(self, uri, **kwargs):
         # ignore url in ref apart from last part
         uri_info = urlparse(uri)
         uri = urljoin(self.schema_url, os.path.basename(uri_info.path))
+
         if "http" in uri_info.scheme:
-            return super().get_remote_json(uri, **kwargs)
+            return get_request(uri, config=self.config).json(**kwargs)
         else:
             with open(uri) as schema_file:
                 return json.load(schema_file, **kwargs)
@@ -621,13 +627,17 @@ def get_schema_validation_errors(
         resolver = CustomRefResolver(
             "",
             pkg_schema_obj,
+            config=schema_obj.config,
             schema_url=schema_obj.schema_host,
             schema_file=schema_obj.extended_schema_file,
             file_schema_name=schema_obj.schema_name,
         )
     else:
         resolver = CustomRefResolver(
-            "", pkg_schema_obj, schema_url=schema_obj.schema_host
+            "",
+            pkg_schema_obj,
+            config=schema_obj.config,
+            schema_url=schema_obj.schema_host,
         )
 
     our_validator = validator(
@@ -970,6 +980,7 @@ class CustomRefResolver(RefResolver):
         # the name of the schema file is appended to this to make the full url.
         # this is ignored when you supply a file
         self.schema_url = kw.pop("schema_url", "")
+        self.config = kw.pop("config", "")
         super().__init__(*args, **kw)
 
     def resolve_remote(self, uri):
@@ -984,7 +995,23 @@ class CustomRefResolver(RefResolver):
         if document:
             return document
         if uri.startswith("http"):
-            return super().resolve_remote(uri)
+            # This branch of the if-statement in-lines `RefResolver.resolve_remote()`, but using `get_request()`.
+            scheme = urlsplit(uri).scheme
+
+            if scheme in self.handlers:
+                result = self.handlers[scheme](uri)
+            elif scheme in [u"http", u"https"]:
+                # Requests has support for detecting the correct encoding of
+                # json over http
+                result = get_request(uri, config=self.config).json()
+            else:
+                # Otherwise, pass off to urllib and assume utf-8
+                with urlopen(uri) as url:
+                    result = json.loads(url.read().decode("utf-8"))
+
+            if self.cache_remote:
+                self.store[uri] = result
+            return result
         else:
             with open(uri) as schema_file:
                 result = json.load(schema_file)

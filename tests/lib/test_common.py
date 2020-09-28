@@ -396,6 +396,7 @@ def test_get_orgids_prefixes_live():
 class DummyReleaseSchemaObj:
     def __init__(self, schema_host):
         self.schema_host = schema_host
+        self.config = None
 
     def get_pkg_schema_obj(self):
         with open(os.path.join(self.schema_host, "release-package-schema.json")) as fp:
@@ -406,6 +407,7 @@ class DummyReleaseSchemaObj:
 class DummyRecordSchemaObj:
     def __init__(self, schema_host):
         self.schema_host = schema_host
+        self.config = None
 
     def get_pkg_schema_obj(self):
         with open(os.path.join(self.schema_host, "record-package-schema.json")) as fp:
