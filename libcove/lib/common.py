@@ -28,12 +28,12 @@ from .tools import decimal_default, get_request
 
 class TypeChecker:
     def is_type(self, instance, type):
-        if type == "object":
-            return isinstance(instance, dict)
         if type == "string":
             return isinstance(instance, str)
         if type == "array":
             return isinstance(instance, list)
+        if type == "object":
+            return isinstance(instance, dict)
         if type == "integer":
             if isinstance(instance, bool):
                 return False
@@ -42,7 +42,7 @@ class TypeChecker:
             if isinstance(instance, bool):
                 return False
             return isinstance(instance, numbers.Number)
-        if type == "bool":
+        if type == "boolean":
             return isinstance(instance, bool)
         if type == "null":
             return instance is None
