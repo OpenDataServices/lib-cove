@@ -39,7 +39,9 @@ def test_get_json_data_deprecated_fields():
     schema_obj.pkg_schema_url = os.path.join(
         schema_obj.schema_host, schema_obj.release_pkg_schema_name
     )
-    json_data_paths = get_json_data_generic_paths(json_data_w_deprecations, generic_paths={})
+    json_data_paths = get_json_data_generic_paths(
+        json_data_w_deprecations, generic_paths={}
+    )
     deprecated_data_fields = get_json_data_deprecated_fields(
         json_data_paths, schema_obj
     )
