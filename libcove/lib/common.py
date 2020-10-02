@@ -952,8 +952,9 @@ def get_fields_present_with_examples(*args, **kwargs):
     counter = collections.OrderedDict()
     for key, value in fields_present_generator(*args, **kwargs):
         if key not in counter:
-            counter[key] = {"count": 0, "examples": []}
-        counter[key]["count"] += 1
+            counter[key] = {"count": 1, "examples": []}
+        else:
+            counter[key]["count"] += 1
         if len(counter[key]["examples"]) < 3:
             if not isinstance(value, (list, dict)):
                 counter[key]["examples"].append(value)
@@ -1129,16 +1130,10 @@ def _get_schema_non_required_ids(
 def fields_present_generator(json_data, prefix=""):
     if isinstance(json_data, dict):
         for key, value in json_data.items():
-            if isinstance(value, list):
-                yield prefix + "/" + key, value
-                for item in value:
-                    if isinstance(item, dict):
-                        yield from fields_present_generator(item, prefix + "/" + key)
-            elif isinstance(value, dict):
-                yield prefix + "/" + key, value
-                yield from fields_present_generator(value, prefix + "/" + key)
-            else:
-                yield prefix + "/" + key, value
+            new_key = prefix + "/" + key
+            yield new_key, value
+            if isinstance(value, (dict, list)):
+                yield from fields_present_generator(value, new_key)
     elif isinstance(json_data, list):
         for item in json_data:
             if isinstance(item, dict):
