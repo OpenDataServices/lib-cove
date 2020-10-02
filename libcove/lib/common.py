@@ -837,12 +837,12 @@ def get_json_data_generic_paths(json_data, generic_paths, path=(), generic_key=(
     }
     """
     if type(json_data) is list:
+        is_dict = False
         iterable = enumerate(json_data)
         new_generic_key = generic_key
-        is_dict = False
     else:
-        iterable = json_data.items()
         is_dict = True
+        iterable = json_data.items()
 
     for key, value in iterable:
         new_path = path + (key,)
