@@ -397,9 +397,6 @@ def common_checks_context(
     )
 
     additional_fields_count = sum(item[2] for item in additional_fields)
-    additional_fields_all = get_additional_fields_info(
-        json_data, schema_fields, context, fields_regex=fields_regex
-    )
 
     context.update(
         {
