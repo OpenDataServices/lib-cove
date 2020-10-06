@@ -17,17 +17,30 @@ from django.utils.html import conditional_escape, escape, format_html
 from flattentool import unflatten
 from flattentool.schema import get_property_type_set
 from jsonschema import FormatChecker, RefResolver
-from jsonschema._utils import uniq
+from jsonschema._utils import ensure_list, types_msg, uniq
 from jsonschema.compat import urlopen, urlsplit
 from jsonschema.exceptions import ValidationError
 
 from .exceptions import cove_spreadsheet_conversion_error
 from .tools import decimal_default, get_request
 
+
+def type_validator(validator, types, instance, schema):
+    types = ensure_list(types)
+
+    for type in types:
+        if validator.is_type(instance, type):
+            break
+    else:
+        yield ValidationError(types_msg(instance, types))
+
+
 # Because we will be changing items on this validator, it's important we take a copy!
 # Otherwise we could cause conflicts with other software in the same process.
 validator = jsonschema.validators.extend(
-    jsonschema.validators.Draft4Validator, validators={}
+    validators={
+        "type": type_validator,
+    },
 )
 
 uniqueItemsValidator = validator.VALIDATORS.pop("uniqueItems")
