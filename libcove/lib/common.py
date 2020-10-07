@@ -36,6 +36,7 @@ def type_validator(validator, types, instance, schema):
 # Because we will be changing items on this validator, it's important we take a copy!
 # Otherwise we could cause conflicts with other software in the same process.
 validator = jsonschema.validators.extend(
+    jsonschema.validators.Draft4Validator,
     validators={
         "type": type_validator,
     },
