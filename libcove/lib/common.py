@@ -1081,7 +1081,9 @@ def _get_schema_deprecated_paths(
 
         if value.get("type") == ["object"]:
             _get_schema_deprecated_paths(None, value, path, deprecated_paths)
-        elif value.get("type") == ["array"] and value.get("items", {}).get("properties"):
+        elif value.get("type") == ["array"] and value.get("items", {}).get(
+            "properties"
+        ):
             _get_schema_deprecated_paths(None, value["items"], path, deprecated_paths)
 
     return deprecated_paths
