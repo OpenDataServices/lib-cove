@@ -26,8 +26,6 @@ from .tools import decimal_default, get_request
 
 
 def type_validator(validator, types, instance, schema):
-    types = ensure_list(types)
-
     for type in types:
         if validator.is_type(instance, type):
             break
@@ -189,26 +187,26 @@ validator.VALIDATORS["oneOf"] = oneOf_draft4
 class SchemaJsonMixin:
     @cached_property
     def schema_str(self):
-        response = get_request(
+        schema = get_request(
             self.schema_url,
             config=getattr(self, "config", None),
             force_cache=getattr(self, "cache_schema", False),
-        )
-        return response.text
+        ).json()
+        return json.dumps(_ensure_type_lists(schema))
 
     @cached_property
     def pkg_schema_str(self):
         uri_scheme = urlparse(self.pkg_schema_url).scheme
         if uri_scheme == "http" or uri_scheme == "https":
-            response = get_request(
+            schema = get_request(
                 self.pkg_schema_url,
                 config=getattr(self, "config", None),
                 force_cache=getattr(self, "cache_schema", False),
-            )
-            return response.text
+            ).json()
         else:
             with open(self.pkg_schema_url) as fp:
-                return fp.read()
+                schema = json.load(fp)
+        return json.dumps(_ensure_type_lists(schema))
 
     @property
     def _schema_obj(self):
@@ -358,10 +356,11 @@ class CustomJsonrefLoader(jsonref.JsonLoader):
         uri = urljoin(self.schema_url, os.path.basename(uri_info.path))
 
         if "http" in uri_info.scheme:
-            return get_request(uri, config=self.config).json(**kwargs)
+            schema = get_request(uri, config=self.config).json(**kwargs)
         else:
             with open(uri) as schema_file:
-                return json.load(schema_file, **kwargs)
+                schema = json.load(schema_file, **kwargs)
+        return _ensure_type_lists(schema)
 
 
 def common_checks_context(
@@ -1021,15 +1020,12 @@ class CustomRefResolver(RefResolver):
                 # Otherwise, pass off to urllib and assume utf-8
                 with urlopen(uri) as url:
                     result = json.loads(url.read().decode("utf-8"))
-
-            if self.cache_remote:
-                self.store[uri] = result
-            return result
         else:
             with open(uri) as schema_file:
                 result = json.load(schema_file)
 
         add_is_codelist(result)
+        result = _ensure_type_lists(result)
         self.store[uri] = result
         return result
 
@@ -1253,3 +1249,42 @@ def get_orgids_prefixes(orgids_url=None):
             pass  # Update fails
 
     return [org_list["code"] for org_list in org_ids["lists"]]
+
+
+def _ensure_type_lists(schema):
+    """
+    Loads the JSON data and change the values of "type" properties to arrays.
+    """
+    # https://tools.ietf.org/html/draft-fge-json-schema-validation-00
+    # 11 validatation properties "MUST be a valid JSON Schema".
+    schemas = {"additionalItems", "additionalProperties", "items", "not"}
+    list_of_schemas = {"allOf", "anyOf", "oneOf", "items"}
+    dict_of_schemas = {
+        "definitions",
+        "dependencies",
+        "patternProperties",
+        "properties",
+    }
+
+    def _recurse(schema, pointer=()):
+        if isinstance(schema, dict):
+            if "type" in schema and (
+                not pointer
+                or pointer[-1] in schemas
+                or len(pointer) > 1
+                and (
+                    pointer[-2] in list_of_schemas
+                    and isinstance(pointer[-1], int)
+                    or pointer[-2] in dict_of_schemas
+                    and isinstance(pointer[-1], str)
+                )
+            ):
+                schema["type"] = ensure_list(schema["type"])
+            for key, value in schema.items():
+                _recurse(value, pointer + (key,))
+        elif isinstance(schema, list):
+            for i, item in enumerate(schema):
+                _recurse(item, pointer + (i,))
+
+    _recurse(schema)
+    return schema
