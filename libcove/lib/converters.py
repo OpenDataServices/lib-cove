@@ -5,7 +5,7 @@ import shutil
 import warnings
 
 import flattentool
-from django.utils.translation import ugettext_lazy as _
+
 from flattentool.json_input import BadlyFormedJSONError
 
 from .exceptions import CoveInputDataError, cove_spreadsheet_conversion_error

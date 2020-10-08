@@ -427,7 +427,6 @@ class DummyRecordSchemaObj:
             [
                 {
                     "message": "Non-unique id values",
-                    "message_safe": "Non-unique id values",
                     "validator": "uniqueItems",
                     "assumption": None,
                     "message_type": "uniqueItems",
@@ -450,7 +449,6 @@ class DummyRecordSchemaObj:
             [
                 {
                     "message": "'id' is missing but required",
-                    "message_safe": "<code>id</code> is missing but required",
                     "validator": "required",
                     "assumption": None,
                     "message_type": "required",
@@ -463,7 +461,6 @@ class DummyRecordSchemaObj:
                 },
                 {
                     "message": "Array has non-unique elements",
-                    "message_safe": "Array has non-unique elements",
                     "validator": "uniqueItems",
                     "assumption": None,
                     "message_type": "uniqueItems",
@@ -483,7 +480,6 @@ class DummyRecordSchemaObj:
             [
                 {
                     "message": "'ocid' is missing but required",
-                    "message_safe": "<code>ocid</code> is missing but required",
                     "validator": "required",
                     "assumption": None,
                     "message_type": "required",
@@ -496,7 +492,6 @@ class DummyRecordSchemaObj:
                 },
                 {
                     "message": "Array has non-unique elements",
-                    "message_safe": "Array has non-unique elements",
                     "validator": "uniqueItems",
                     "assumption": None,
                     "message_type": "uniqueItems",
@@ -518,7 +513,6 @@ class DummyRecordSchemaObj:
             [
                 {
                     "message": "'id' is missing but required",
-                    "message_safe": "<code>id</code> is missing but required",
                     "validator": "required",
                     "assumption": None,
                     "message_type": "required",
@@ -538,7 +532,6 @@ class DummyRecordSchemaObj:
             [
                 {
                     "message": "'ocid' is missing but required",
-                    "message_safe": "<code>ocid</code> is missing but required",
                     "validator": "required",
                     "assumption": None,
                     "message_type": "required",
