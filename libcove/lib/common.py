@@ -627,7 +627,7 @@ def get_schema_validation_errors(
         resolver = CustomRefResolver(
             "",
             pkg_schema_obj,
-            config=schema_obj.config,
+            config=getattr(schema_obj, "config", None),
             schema_url=schema_obj.schema_host,
             schema_file=schema_obj.extended_schema_file,
             file_schema_name=schema_obj.schema_name,
@@ -636,7 +636,7 @@ def get_schema_validation_errors(
         resolver = CustomRefResolver(
             "",
             pkg_schema_obj,
-            config=schema_obj.config,
+            config=getattr(schema_obj, "config", None),
             schema_url=schema_obj.schema_host,
         )
 
