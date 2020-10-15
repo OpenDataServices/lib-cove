@@ -656,6 +656,9 @@ def get_schema_validation_errors(
 
         header_extra = None
         pre_header = ""
+        # Mostly we don't want this, but in a couple of specific cases we'll
+        # set it
+        instance = None
 
         if not header and len(e.path):
             header = e.path[-1]
@@ -716,6 +719,12 @@ def get_schema_validation_errors(
                 continue
             message = "Invalid code found in '{}'".format(header)
 
+        if e.validator == "minItems" and e.validator_value == 1:
+            instance = e.instance
+
+        if e.validator == "minLength" and e.validator_value == 1:
+            instance = e.instance
+
         if header_extra is None:
             header_extra = header
 
@@ -741,6 +750,8 @@ def get_schema_validation_errors(
                 ("error_id", e.error_id if hasattr(e, "error_id") else None),
             ]
         )
+        if instance is not None:
+            unique_validator_key["instance"] = str(instance)
         validation_errors[json.dumps(unique_validator_key)].append(value)
     return dict(validation_errors)
 
