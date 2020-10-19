@@ -13,8 +13,6 @@ setup(
         "jsonref",
         "jsonschema",
         "CommonMark",
-        "Django<2.3",
-        "bleach",
         "requests",
         "json-merge-patch",
         "cached-property",
