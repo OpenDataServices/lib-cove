@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Move all strings that show in the web frontend from here to lib-cove-web. This includes HTML validation messages. https://github.com/OpenDataServices/lib-cove/pull/68
+
 ## [0.19.1] - 2020-10-08
 
 ### Fixed
