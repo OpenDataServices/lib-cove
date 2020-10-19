@@ -13,7 +13,6 @@ import jsonref
 import jsonschema.validators
 import requests
 from cached_property import cached_property
-from django.utils.html import conditional_escape, escape, format_html
 from flattentool import unflatten
 from flattentool.schema import get_property_type_set
 from jsonschema import FormatChecker, RefResolver
@@ -42,18 +41,6 @@ validation_error_template_lookup = {
     "number": "{}'{}' is not a number. Check that the value {} doesn’t contain any characters other than 0-9 and dot ('.'). Number values should not be in quotes. ",
     "object": "{}'{}' is not a JSON object",
     "array": "{}'{}' is not a JSON array",
-}
-# These are "safe" html that we trust
-# Don't insert any values into these strings without ensuring escaping
-# e.g. using django's format_html function.
-validation_error_template_lookup_safe = {
-    "date-time": "Date is not in the correct format",
-    "uri": "Invalid 'uri' found",
-    "string": "{}<code>{}</code> is not a string. Check that the value {} has quotes at the start and end. Escape any quotes in the value with <code>\</code>",
-    "integer": "{}<code>{}</code> is not a integer. Check that the value {} doesn’t contain decimal points or any characters other than 0-9. Integer values should not be in quotes. ",
-    "number": "{}<code>{}</code> is not a number. Check that the value {} doesn’t contain any characters other than 0-9 and dot (<code>.</code>). Number values should not be in quotes. ",
-    "object": "{}<code>{}</code> is not a JSON object",
-    "array": "{}<code>{}</code> is not a JSON array",
 }
 
 
@@ -644,7 +631,6 @@ def get_schema_validation_errors(
         pkg_schema_obj, format_checker=format_checker, resolver=resolver
     )
     for e in our_validator.iter_errors(json_data):
-        message_safe = None
         message = e.message
         path = "/".join(str(item) for item in e.path)
         path_no_number = "/".join(
@@ -670,6 +656,9 @@ def get_schema_validation_errors(
 
         header_extra = None
         pre_header = ""
+        # Mostly we don't want this, but in a couple of specific cases we'll
+        # set it
+        instance = None
 
         if not header and len(e.path):
             header = e.path[-1]
@@ -692,24 +681,13 @@ def get_schema_validation_errors(
             message_template = validation_error_template_lookup.get(
                 validator_type, message
             )
-            message_safe_template = validation_error_template_lookup_safe.get(
-                validator_type
-            )
 
             if message_template:
                 message = message_template.format(pre_header, header, null_clause)
 
-            if message_safe_template:
-                message_safe = format_html(
-                    message_safe_template, pre_header, header, null_clause
-                )
-
         if e.validator == "oneOf" and e.validator_value[0] == {"format": "date-time"}:
             # Give a nice date related error message for 360Giving date `oneOf`s.
             message = validation_error_template_lookup["date-time"]
-            message_safe = format_html(
-                validation_error_template_lookup_safe["date-time"]
-            )
             validator_type = "date-time"
 
         if not isinstance(e.instance, (dict, list)):
@@ -733,44 +711,19 @@ def get_schema_validation_errors(
                 message = "'{}' is missing but required within '{}'".format(
                     field_name, parent_name
                 )
-                message_safe = format_html(
-                    "<code>{}</code> is missing but required within <code>{}</code>",
-                    field_name,
-                    parent_name,
-                )
             else:
                 message = "'{}' is missing but required".format(field_name)
-                message_safe = format_html(
-                    "<code>{}</code> is missing but required", field_name, parent_name
-                )
 
         if e.validator == "enum":
             if "isCodelist" in e.schema:
                 continue
             message = "Invalid code found in '{}'".format(header)
-            message_safe = format_html("Invalid code found in <code>{}</code>", header)
-
-        if e.validator == "pattern":
-            message_safe = format_html(
-                "<code>{}</code> does not match the regex <code>{}</code>",
-                header,
-                e.validator_value,
-            )
 
         if e.validator == "minItems" and e.validator_value == 1:
-            message_safe = format_html(
-                "<code>{}</code> is too short. You must supply at least one value, or remove the item entirely (unless it’s required).",
-                e.instance,
-            )
+            instance = e.instance
 
         if e.validator == "minLength" and e.validator_value == 1:
-            message_safe = format_html(
-                '<code>"{}"</code> is too short. Strings must be at least one character. This error typically indicates a missing value.',
-                e.instance,
-            )
-
-        if message_safe is None:
-            message_safe = escape(message)
+            instance = e.instance
 
         if header_extra is None:
             header_extra = header
@@ -778,7 +731,6 @@ def get_schema_validation_errors(
         unique_validator_key = OrderedDict(
             [
                 ("message", message),
-                ("message_safe", conditional_escape(message_safe)),
                 ("validator", e.validator),
                 ("assumption", e.assumption if hasattr(e, "assumption") else None),
                 # Don't pass this value for 'enum' and 'required' validators,
@@ -798,6 +750,8 @@ def get_schema_validation_errors(
                 ("error_id", e.error_id if hasattr(e, "error_id") else None),
             ]
         )
+        if instance is not None:
+            unique_validator_key["instance"] = str(instance)
         validation_errors[json.dumps(unique_validator_key)].append(value)
     return dict(validation_errors)
 
