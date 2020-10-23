@@ -1,0 +1,52 @@
+name: Integration
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        cove: [ 'oc4ids' , 'ocds' , 'bods']
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+    - name: InstallCommon
+      run: |
+        sudo apt-get install gettext translate-toolkit
+
+    - name: oc4ids
+      if: matrix.cove == 'oc4ids'
+      run: |
+        git clone https://github.com/open-contracting/cove-oc4ids.git
+        git clone https://github.com/open-contracting/lib-cove-oc4ids.git
+
+    - name: ocds
+      if: matrix.cove == 'ocds'
+      run: |
+        git clone https://github.com/open-contracting/cove-ocds.git
+        git clone https://github.com/open-contracting/lib-cove-ocds.git
+
+    - name: bods
+      if: matrix.cove == 'bods'
+      run: |
+        git clone https://github.com/openownership/cove-bods.git
+        git clone https://github.com/openownership/lib-cove-bods.git
+
+    - name: Install
+      run: |
+        pip install -r cove-${{ matrix.cove }}/requirements.txt
+        pip install -r cove-${{ matrix.cove }}/requirements_dev.txt
+        pip install -r requirements_dev.txt
+        # Make sure we're using local libs rather than one brought in
+        # via requirements.
+        pip install -e .
+        pip install -e ./lib-cove-${{ matrix.cove }}/
+        pip list
+
+    - name: Test
+      run: |
+        cd cove-${{ matrix.cove }}
+        DJANGO_SETTINGS_MODULE=cove_project.settings py.test
+        cd ../lib-cove-${{ matrix.cove }}
+        py.test
