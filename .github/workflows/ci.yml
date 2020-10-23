@@ -1,0 +1,22 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # libcove doesn't support Windows.
+        # https://github.com/OpenDataServices/lib-cove/issues/53
+        os: [macos-latest, ubuntu-latest]
+        python-version: [3.5, 3.6, 3.7, 3.8]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install
+      run: |
+        pip install -r requirements_dev.txt
+        pip install .
+    - name: Test
+      run: py.test tests/

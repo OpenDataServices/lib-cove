@@ -1,0 +1,30 @@
+name: Lint
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.5, 3.8]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install
+      run: |
+        pip install -r requirements_dev.txt
+
+    - name: IsortFlake8Check
+      run: |
+        isort --check-only --recursive *.py */
+        flake8
+
+    - name: PythonBlackCheck
+      if: matrix.python-version == 3.8
+      run: |
+        pip install black
+        black --check *.py */
+
+
