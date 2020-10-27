@@ -14,8 +14,11 @@ class CoveInputDataError(Exception):
     bug in the application.
     """
 
-    def __init__(self, wrapped_err):
-        self.wrapped_err = wrapped_err
+    def __init__(self, wrapped_err=None, context=None):
+        if wrapped_err:
+            self.wrapped_err = wrapped_err
+        elif context:
+            self.context = context
 
 
 def cove_spreadsheet_conversion_error(func):
