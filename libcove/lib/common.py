@@ -4,6 +4,7 @@ import datetime
 import fcntl
 import functools
 import json
+import logging
 import os
 import re
 from collections import OrderedDict
@@ -42,6 +43,8 @@ validation_error_template_lookup = {
     "object": "{}'{}' is not a JSON object",
     "array": "{}'{}' is not a JSON array",
 }
+
+logger = logging.getLogger(__name__)
 
 
 def unique_ids(validator, ui, instance, schema, id_name="id"):
@@ -1105,6 +1108,14 @@ def add_is_codelist(obj):
     release.tag in core schema at the moment."""
 
     for prop, value in obj.get("properties", {}).items():
+        if not isinstance(value, dict):
+            logger.warning(
+                "A 'properties' object contains a {!r} value that is not a JSON Schema: {!r}".format(
+                    prop, value
+                )
+            )
+            continue
+
         if "codelist" in value:
             if "array" in value.get("type", ""):
                 value["items"]["isCodelist"] = True
