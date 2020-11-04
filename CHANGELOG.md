@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.20.2] - 2020-11-04
+
+### Fixed
+
+- Don't error when JSON schema "properties" values aren't JSON Schema, and log a warning instead https://github.com/OpenDataServices/lib-cove/pull/71
+
 ## [0.20.1] - 2020-10-27
 
 ### Fixed
