@@ -228,15 +228,11 @@ def schema_dict_fields_generator(schema_dict):
             for property_schema_dict in property_schema_dicts:
                 if not isinstance(property_schema_dict, dict):
                     continue
-                property_type_set = get_property_type_set(property_schema_dict)
-                if "object" in property_type_set:
+                if "properties" in property_schema_dict:
                     for field in schema_dict_fields_generator(property_schema_dict):
                         yield "/" + property_name + field
-                elif "array" in property_type_set:
-                    fields = schema_dict_fields_generator(
-                        property_schema_dict.get("items", {})
-                    )
-                    for field in fields:
+                elif "items" in property_schema_dict:
+                    for field in schema_dict_fields_generator(property_schema_dict["items"]):
                         yield "/" + property_name + field
                 yield "/" + property_name
     if "items" in schema_dict and isinstance(schema_dict["items"], dict):
