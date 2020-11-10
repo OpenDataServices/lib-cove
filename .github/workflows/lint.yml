@@ -1,0 +1,25 @@
+name: Lint
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+
+    - name: Install
+      run: pip install -r requirements_dev.txt
+
+    - name: Install Black
+      run: pip install black
+
+    - name: Isort
+      run: isort --check-only --recursive *.py */
+
+    - name: Flake8
+      run: flake8
+
+    - name: Black
+      run: black --check *.py */
