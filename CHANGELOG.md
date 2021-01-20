@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.20.3] - 2021-01-20
+
+### Fixed
+
+- JSON Schema is not guaranteed to set `type`, so look for `properties` or `items` instead (in `schema_dict_fields_generator`)
+
+### Fixed
+
 ## [0.20.2] - 2020-11-04
 
 ### Fixed
