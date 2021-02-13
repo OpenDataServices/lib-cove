@@ -1,13 +1,13 @@
 import collections
 import csv
 import datetime
-import fcntl
 import functools
 import json
 import logging
 import os
 import re
 from collections import OrderedDict
+from tempfile import NamedTemporaryFile
 from urllib.parse import urljoin, urlparse
 
 import jsonref
@@ -1154,51 +1154,45 @@ def get_spreadsheet_meta_data(
     return metatab_json
 
 
+def org_id_file_fresh(org_id_file_contents, check_date):
+    """Unless the file was downloaded on greater than or equal to 'check_date' it is considered stale."""
+    org_id_file_date_downloaded_date = datetime.datetime.strptime(
+        org_id_file_contents.get("downloaded", "2000-1-1"), "%Y-%m-%d"
+    ).date()
+    return org_id_file_date_downloaded_date >= check_date
+
+
 def get_orgids_prefixes(orgids_url=None):
-    """Get org-ids.json file from file system (or fetch upstream if it doesn't exist)
-
-    A lock file is needed to avoid different processes trying to access the file
-    trampling each other. If a process has the exclusive lock, a different process
-    will wait until it is released.
-    """
-    local_org_ids_dir = os.path.dirname(os.path.realpath(__file__))
-    local_org_ids_file = os.path.join(local_org_ids_dir, "org-ids.json")
-    lock_file = os.path.join(local_org_ids_dir, "org-ids.json.lock")
+    """Get org-ids.json file from file system (or fetch remotely if it doesn't exist)"""
+    local_org_ids_file = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "org-ids.json"
+    )
     today = datetime.date.today()
-    get_remote_file = False
-    first_request = False
-
-    if not orgids_url:
+    if orgids_url is None:
         orgids_url = "http://org-id.guide/download.json"
+    org_id_file_contents = None
 
-    if os.path.exists(local_org_ids_file):
-        with open(lock_file, "w") as lock:
-            fcntl.flock(lock, fcntl.LOCK_EX)
-            fp = open(local_org_ids_file)
-            org_ids = json.load(fp)
-            fp.close()
-            fcntl.flock(lock, fcntl.LOCK_UN)
-        date_str = org_ids.get("downloaded", "2000-1-1")
-        date_downloaded = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
-        if date_downloaded != today:
-            get_remote_file = True
-    else:
-        get_remote_file = True
-        first_request = True
+    # Try to grab the data from the local filesystem
+    try:
+        with open(local_org_ids_file) as fp:
+            org_id_file_contents = json.load(fp)
+    except FileNotFoundError:
+        pass
 
-    if get_remote_file:
+    if org_id_file_contents is None or not org_id_file_fresh(
+        org_id_file_contents, today
+    ):
+        # Refresh the file
         try:
-            org_ids = requests.get(orgids_url).json()
-            org_ids["downloaded"] = "%s" % today
-            with open(lock_file, "w") as lock:
-                fcntl.flock(lock, fcntl.LOCK_EX)
-                fp = open(local_org_ids_file, "w")
-                json.dump(org_ids, fp, indent=2)
-                fp.close()
-                fcntl.flock(lock, fcntl.LOCK_UN)
-        except requests.exceptions.RequestException:
-            if first_request:
-                raise  # First time ever request fails
-            pass  # Update fails
+            org_id_file_contents = requests.get(orgids_url).json()
+        except requests.exceptions.RequestException as e:
+            # We have tried locally and remotely with no luck. We have to raise.
+            raise e
 
-    return [org_list["code"] for org_list in org_ids["lists"]]
+        org_id_file_contents["downloaded"] = "%s" % today
+        # Use a tempfile and move to create new file here for atomicity
+        with NamedTemporaryFile(mode="w", delete=False) as tmp:
+            json.dump(org_id_file_contents, tmp, indent=2)
+        os.rename(tmp.name, local_org_ids_file)
+    # Return either the original file data, if it was found to be fresh, or the new data, if we were able to retrieve it.
+    return [org_list["code"] for org_list in org_id_file_contents["lists"]]
