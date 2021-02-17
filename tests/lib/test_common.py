@@ -1,8 +1,11 @@
 import json
 import os
 from collections import OrderedDict
+from datetime import datetime
+from unittest import mock
 
 import pytest
+from freezegun import freeze_time
 
 from libcove.lib.common import (
     SchemaJsonMixin,
@@ -14,6 +17,7 @@ from libcove.lib.common import (
     get_json_data_generic_paths,
     get_orgids_prefixes,
     get_schema_validation_errors,
+    org_id_file_fresh,
     schema_dict_fields_generator,
 )
 
@@ -386,11 +390,17 @@ def test_get_additional_fields_info():
     )
 
 
-def test_get_orgids_prefixes_live():
-    data = get_orgids_prefixes()
+@freeze_time("2020-01-02")
+def test_get_orgids_prefixes_live(requests_mock):
+    file_contents = mock.mock_open(
+        read_data='{"downloaded": "2020-01-01", "lists": [{"code": "001"}, {"code": "002"}]}'
+    )
+    text = {"lists": [{"code": str(i)} for i in range(150)]}
+    requests_mock.get("http://org-id.guide/download.json", text=json.dumps(text))
 
-    # There is not much we can really test here, as the results will depend on the live data!
-    assert len(data) > 150
+    with mock.patch("builtins.open", file_contents):
+        data = get_orgids_prefixes()
+        assert len(data) == 150
 
 
 class DummyReleaseSchemaObj:
@@ -581,3 +591,131 @@ def test_validation_release_or_record_package(
         validation_error_jsons.append(validation_error_json)
 
     assert validation_error_jsons == validation_error_jsons_expected
+
+
+@pytest.mark.parametrize(
+    ("filedate", "checkdate", "result"),
+    (
+        ("2020-01-15", "2020-01-14", True),
+        ("2020-01-15", "2020-01-16", False),
+        ("2020-01-15", "2020-01-15", True),
+        ("1998-01-01", "1999-01-01", False),
+        ("1999-01-01", "1998-01-01", True),
+        ("2000-01-01", "2020-01-01", False),
+    ),
+)
+def test_org_id_file_fresh_dates(filedate, checkdate, result):
+    """Check that the date in the file data is greater than or equal to check date."""
+    assert (
+        org_id_file_fresh(
+            {"downloaded": filedate}, datetime.strptime(checkdate, "%Y-%m-%d").date()
+        )
+        is result
+    )
+
+
+@freeze_time("1955-11-12")
+def test_get_orgids_prefixes_does_not_make_request_when_in_date_file_found(
+    requests_mock,
+):
+    file_data = {
+        "downloaded": "2020-01-01",
+        "lists": [{"code": "001"}, {"code": "002"}],
+    }
+
+    with mock.patch("builtins.open", mock.mock_open(read_data=json.dumps(file_data))):
+        get_orgids_prefixes()
+        assert not requests_mock.called
+
+
+@freeze_time("2020-01-02")
+def test_get_orgids_prefixes_makes_request_when_file_out_of_date(requests_mock):
+    file_data = {
+        "downloaded": "2020-01-01",
+        "lists": [{"code": "001"}, {"code": "002"}],
+    }
+    request_data = {"lists": [{"code": "001"}, {"code": "002"}]}
+
+    requests_mock.get(
+        "http://org-id.guide/download.json", text=json.dumps(request_data)
+    )
+
+    with mock.patch("builtins.open", mock.mock_open(read_data=json.dumps(file_data))):
+        get_orgids_prefixes()
+        assert requests_mock.called
+
+
+@freeze_time("2020-01-02")
+def test_get_orgids_prefixes_returns_file_ids_when_file_in_date(requests_mock):
+    file_data = {
+        "downloaded": "2020-01-02",
+        "lists": [{"code": "file-id-1"}, {"code": "file-id-2"}],
+    }
+
+    requests_mock.get("http://org-id.guide/download.json")
+
+    with mock.patch("builtins.open", mock.mock_open(read_data=json.dumps(file_data))):
+        assert sorted(get_orgids_prefixes()) == ["file-id-1", "file-id-2"]
+
+
+@freeze_time("2020-01-02")
+def test_get_orgids_prefixes_returns_downloaded_ids_when_file_out_of_date(
+    requests_mock,
+):
+    file_data = {
+        "downloaded": "2020-01-01",
+        "lists": [{"code": "file-id-1"}, {"code": "file-id-2"}],
+    }
+    request_data = {
+        "lists": [{"code": "dl-id-001"}, {"code": "dl-id-002"}, {"code": "dl-id-003"}]
+    }
+
+    requests_mock.get(
+        "http://org-id.guide/download.json", text=json.dumps(request_data)
+    )
+
+    with mock.patch("builtins.open", mock.mock_open(read_data=json.dumps(file_data))):
+        assert sorted(get_orgids_prefixes()) == ["dl-id-001", "dl-id-002", "dl-id-003"]
+
+
+@freeze_time("2020-01-02")
+def test_get_orgids_prefixes_opens_file_once_when_in_date(requests_mock):
+    file_data = {
+        "downloaded": "2020-01-02",
+        "lists": [{"code": "file-id-1"}, {"code": "file-id-2"}],
+    }
+
+    with mock.patch(
+        "builtins.open", mock.mock_open(read_data=json.dumps(file_data))
+    ) as file_mock:
+        get_orgids_prefixes()
+        assert file_mock.call_count == 1
+
+
+@freeze_time("2020-01-02")
+@mock.patch("libcove.lib.common.NamedTemporaryFile")
+@mock.patch("libcove.lib.common.os.rename")
+def test_get_orgids_prefixes_opens_and_moves_file_when_updating(
+    rename_mock, tmp_mock, requests_mock
+):
+    tmp_mock.return_value.__enter__.return_value.name = "/path/to/tmp"
+    file_data = {
+        "downloaded": "2020-01-01",
+        "lists": [{"code": "file-id-1"}, {"code": "file-id-2"}],
+    }
+    request_data = {
+        "lists": [{"code": "dl-id-001"}, {"code": "dl-id-002"}, {"code": "dl-id-003"}]
+    }
+
+    requests_mock.get(
+        "http://org-id.guide/download.json", text=json.dumps(request_data)
+    )
+
+    with mock.patch(
+        "builtins.open", mock.mock_open(read_data=json.dumps(file_data))
+    ) as file_mock:
+        get_orgids_prefixes()
+        assert file_mock.call_count == 1
+        assert rename_mock.call_count == 1
+        assert rename_mock.call_args_list[0][0][0] == "/path/to/tmp"
+        assert rename_mock.call_args_list[0][0][1].endswith("org-ids.json")

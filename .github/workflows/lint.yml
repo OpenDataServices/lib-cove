@@ -16,7 +16,7 @@ jobs:
       run: pip install black
 
     - name: Isort
-      run: isort --check-only --recursive *.py */
+      run: isort --check-only *.py */
 
     - name: Flake8
       run: flake8
