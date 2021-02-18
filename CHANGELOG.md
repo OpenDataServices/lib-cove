@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.21.0] - 2021-02-17
+
+- Remove dependency on fcntl, improve Windows support https://github.com/OpenDataServices/lib-cove/pull/74
+
 ## [0.20.3] - 2021-01-20
 
 ### Fixed
