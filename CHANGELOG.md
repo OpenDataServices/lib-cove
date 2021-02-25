@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.22.0] - 2021-02-25
+
 ### Changed
 
 - `get_schema_validation_errors` and therefore `common_checks_context` return more fields on each error dictionary, so that we can [replace the message with a translation in lib-cove-web](https://github.com/open-contracting/cove-ocds/issues/144)
