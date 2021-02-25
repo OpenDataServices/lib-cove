@@ -7,7 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.22.0] - 2021-02-25
+
+### Changed
+
+- `get_schema_validation_errors` and therefore `common_checks_context` return more fields on each error dictionary, so that we can [replace the message with a translation in lib-cove-web](https://github.com/open-contracting/cove-ocds/issues/144)
+
+### Fixed
+
+- Don't error when the value for the `items` key in a JSON Schema is not a dict
+
 ## [0.21.0] - 2021-02-17
+
+### Changed
 
 - Remove dependency on fcntl, improve Windows support https://github.com/OpenDataServices/lib-cove/pull/74
 

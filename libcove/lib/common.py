@@ -16,7 +16,7 @@ import requests
 from cached_property import cached_property
 from flattentool import unflatten
 from jsonschema import FormatChecker, RefResolver
-from jsonschema._utils import uniq
+from jsonschema._utils import extras_msg, find_additional_properties, uniq
 from jsonschema.compat import urlopen, urlsplit
 from jsonschema.exceptions import ValidationError
 
@@ -44,6 +44,10 @@ validation_error_template_lookup = {
 }
 
 logger = logging.getLogger(__name__)
+
+
+# Note there are also OCDS specific overrides at the top of
+# https://github.com/open-contracting/lib-cove-ocds/blob/master/libcoveocds/common_checks.py
 
 
 def unique_ids(validator, ui, instance, schema, id_name="id"):
@@ -153,10 +157,117 @@ def oneOf_draft4(validator, oneOf, instance, schema):
         yield ValidationError("%r is valid under each of %s" % (instance, reprs))
 
 
+def additionalItems_extra_data(validator, aI, instance, schema):
+    """
+    A copy of https://github.com/Julian/jsonschema/blob/9814afc7659d68150f889a4820991210ba26555f/jsonschema/_validators.py#L85
+    which has been modified to return more information on the ValidationError
+    object, to allow us to replace the message with a translation in
+    lib-cove-web.
+
+    """
+    if not validator.is_type(instance, "array") or validator.is_type(
+        schema.get("items", {}), "object"
+    ):
+        return
+
+    len_items = len(schema.get("items", []))
+    if validator.is_type(aI, "object"):
+        for index, item in enumerate(instance[len_items:], start=len_items):
+            for error in validator.descend(item, aI, path=index):
+                yield error
+    elif not aI and len(instance) > len(schema.get("items", [])):
+        extras = instance[len(schema.get("items", [])) :]
+        error = "Additional items are not allowed (%s %s unexpected)"
+        error_exception = ValidationError(error % extras_msg(extras))
+        error_exception.extras = instance[len(schema.get("items", [])) :]
+        yield error_exception
+
+
+def additionalProperties_extra_data(validator, aP, instance, schema):
+    """
+    A copy of https://github.com/Julian/jsonschema/blob/9814afc7659d68150f889a4820991210ba26555f/jsonschema/_validators.py#L41
+    which has been modified to return more information on the ValidationError
+    object, to allow us to replace the message with a translation in
+    lib-cove-web.
+    """
+    if not validator.is_type(instance, "object"):
+        return
+
+    extras = set(find_additional_properties(instance, schema))
+
+    if validator.is_type(aP, "object"):
+        for extra in extras:
+            for error in validator.descend(instance[extra], aP, path=extra):
+                yield error
+    elif not aP and extras:
+        if "patternProperties" in schema:
+            patterns = sorted(schema["patternProperties"])
+            if len(extras) == 1:
+                verb = "does"
+            else:
+                verb = "do"
+            reprs = (
+                ", ".join(map(repr, sorted(extras))),
+                ", ".join(map(repr, patterns)),
+            )
+            error = "%s %s not match any of the regexes: %s" % (
+                reprs[0],
+                verb,
+                reprs[1],
+            )
+            error_exception = ValidationError(error)
+            error_exception.error_id = "additionalProperties_does_not_match_regexes"
+            error_exception.reprs = reprs
+            # cast to list because this gets json serialized
+            error_exception.extras = list(extras)
+            yield error_exception
+        else:
+            error = "Additional properties are not allowed (%s %s unexpected)"
+            error_exception = ValidationError(error % extras_msg(extras))
+            error_exception.error_id = "additionalProperties_not_allowed"
+            # cast to list because this gets json serialized
+            error_exception.extras = list(extras)
+            yield error_exception
+
+
+def dependencies_extra_data(validator, dependencies, instance, schema):
+    """
+    A copy of https://github.com/Julian/jsonschema/blob/9814afc7659d68150f889a4820991210ba26555f/jsonschema/_validators.py#L236
+    which has been modified to return more information on the ValidationError
+    object, to allow us to replace the message with a translation in
+    lib-cove-web.
+    """
+    if not validator.is_type(instance, "object"):
+        return
+
+    for property, dependency in dependencies.items():
+        if property not in instance:
+            continue
+
+        if validator.is_type(dependency, "array"):
+            for each in dependency:
+                if each not in instance:
+                    message = "%r is a dependency of %r"
+                    error_exception = ValidationError(message % (each, property))
+                    error_exception.each = each
+                    error_exception.property = property
+                    yield error_exception
+        else:
+            for error in validator.descend(
+                instance,
+                dependency,
+                schema_path=property,
+            ):
+                yield error
+
+
 validator.VALIDATORS.pop("patternProperties")
 validator.VALIDATORS["uniqueItems"] = unique_ids
 validator.VALIDATORS["required"] = required_draft4
 validator.VALIDATORS["oneOf"] = oneOf_draft4
+validator.VALIDATORS["dependencies"] = dependencies_extra_data
+validator.VALIDATORS["additionalItems"] = additionalItems_extra_data
+validator.VALIDATORS["additionalProperties"] = additionalProperties_extra_data
 
 
 # Properties this class might look for
@@ -273,7 +384,11 @@ def get_schema_codelist_paths(
 
         if value.get("type") == "object":
             get_schema_codelist_paths(None, value, path, codelist_paths)
-        elif value.get("type") == "array" and value.get("items", {}).get("properties"):
+        elif (
+            value.get("type") == "array"
+            and isinstance(value.get("items"), dict)
+            and value.get("items").get("properties")
+        ):
             get_schema_codelist_paths(None, value["items"], path, codelist_paths)
 
     return codelist_paths
@@ -719,10 +834,25 @@ def get_schema_validation_errors(
                 continue
             message = "Invalid code found in '{}'".format(header)
 
-        if e.validator == "minItems" and e.validator_value == 1:
+        if e.validator in [
+            "minItems",
+            "minLength",
+            "maxItems",
+            "maxLength",
+            "minProperties",
+            "maxProperties",
+            "minimum",
+            "maximum",
+            "anyOf",
+            "multipleOf",
+            "not",
+        ]:
             instance = e.instance
 
-        if e.validator == "minLength" and e.validator_value == 1:
+        if e.validator == "format" and e.validator not in ["date-time", "uri"]:
+            instance = e.instance
+
+        if getattr(e, "error_id", None) in ["oneOf_any", "oneOf_each"]:
             instance = e.instance
 
         if header_extra is None:
@@ -748,10 +878,16 @@ def get_schema_validation_errors(
                 ("header_extra", header_extra),
                 ("null_clause", null_clause),
                 ("error_id", e.error_id if hasattr(e, "error_id") else None),
+                ("exclusiveMinimum", e.schema.get("exclusiveMinimum")),
+                ("exclusiveMaximum", e.schema.get("exclusiveMaximum")),
+                ("extras", getattr(e, "extras", None)),
+                ("each", getattr(e, "each", None)),
+                ("property", getattr(e, "property", None)),
+                ("reprs", getattr(e, "reprs", None)),
             ]
         )
         if instance is not None:
-            unique_validator_key["instance"] = str(instance)
+            unique_validator_key["instance"] = instance
         validation_errors[json.dumps(unique_validator_key)].append(value)
     return dict(validation_errors)
 
@@ -1025,7 +1161,11 @@ def _get_schema_deprecated_paths(
 
         if value.get("type") == "object":
             _get_schema_deprecated_paths(None, value, path, deprecated_paths)
-        elif value.get("type") == "array" and value.get("items", {}).get("properties"):
+        elif (
+            value.get("type") == "array"
+            and isinstance(value.get("items"), dict)
+            and value.get("items").get("properties")
+        ):
             _get_schema_deprecated_paths(None, value["items"], path, deprecated_paths)
 
     return deprecated_paths
@@ -1066,7 +1206,11 @@ def _get_schema_non_required_ids(
 
         if value.get("type") == "object":
             _get_schema_non_required_ids(None, value, path, id_paths)
-        elif value.get("type") == "array" and value.get("items", {}).get("properties"):
+        elif (
+            value.get("type") == "array"
+            and isinstance(value.get("items"), dict)
+            and value.get("items").get("properties")
+        ):
             has_list_merge = "wholeListMerge" in value and value.get("wholeListMerge")
             _get_schema_non_required_ids(
                 None,
@@ -1121,7 +1265,11 @@ def add_is_codelist(obj):
 
         if value.get("type") == "object":
             add_is_codelist(value)
-        elif value.get("type") == "array" and value.get("items", {}).get("properties"):
+        elif (
+            value.get("type") == "array"
+            and isinstance(value.get("items"), dict)
+            and value.get("items").get("properties")
+        ):
             add_is_codelist(value["items"])
 
     for value in obj.get("definitions", {}).values():
