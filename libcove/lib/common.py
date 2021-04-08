@@ -849,7 +849,7 @@ def get_schema_validation_errors(
         ]:
             instance = e.instance
 
-        if e.validator == "format" and e.validator not in ["date-time", "uri"]:
+        if e.validator == "format" and validator_type not in ["date-time", "uri"]:
             instance = e.instance
 
         if getattr(e, "error_id", None) in ["oneOf_any", "oneOf_each"]:

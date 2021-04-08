@@ -44,6 +44,14 @@ jobs:
         pip install -e ./lib-cove-${{ matrix.cove }}/
         pip list
 
+    - name: Compile Messages
+      if: matrix.cove == 'ocds'
+      run: |
+        cd cove-${{ matrix.cove }}
+        python manage.py compilemessages
+        # Ensure that compilemessages gets run for lib-cove-web
+        pushd /opt/hostedtoolcache; pwd; django-admin compilemessages; popd
+
     - name: Test cove instance
       run: |
         cd cove-${{ matrix.cove }}

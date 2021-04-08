@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.22.1] - 2021-04-08
+
+### Fixed
+
+- Fix a typo of a variable name, that meant `date-time` and `uri` validation messages were incorrectly grouped
+
 ## [0.22.0] - 2021-02-25
 
 ### Changed
