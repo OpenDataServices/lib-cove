@@ -248,6 +248,14 @@ def schema_dict_fields_generator(schema_dict):
                     yield field
 
 
+def _is_array_of_objects(value):
+    return (
+        value.get("type") == "array"
+        and isinstance(value.get("items"), dict)
+        and value.get("items", {}).get("properties")
+    )
+
+
 def get_schema_codelist_paths(
     schema_obj, obj=None, current_path=(), codelist_paths=None, use_extensions=False
 ):
@@ -276,7 +284,7 @@ def get_schema_codelist_paths(
 
         if value.get("type") == "object":
             get_schema_codelist_paths(None, value, path, codelist_paths)
-        elif value.get("type") == "array" and value.get("items", {}).get("properties"):
+        elif _is_array_of_objects(value):
             get_schema_codelist_paths(None, value["items"], path, codelist_paths)
 
     return codelist_paths
@@ -1028,7 +1036,7 @@ def _get_schema_deprecated_paths(
 
         if value.get("type") == "object":
             _get_schema_deprecated_paths(None, value, path, deprecated_paths)
-        elif value.get("type") == "array" and value.get("items", {}).get("properties"):
+        elif _is_array_of_objects(value):
             _get_schema_deprecated_paths(None, value["items"], path, deprecated_paths)
 
     return deprecated_paths
@@ -1069,7 +1077,7 @@ def _get_schema_non_required_ids(
 
         if value.get("type") == "object":
             _get_schema_non_required_ids(None, value, path, id_paths)
-        elif value.get("type") == "array" and value.get("items", {}).get("properties"):
+        elif _is_array_of_objects(value):
             has_list_merge = "wholeListMerge" in value and value.get("wholeListMerge")
             _get_schema_non_required_ids(
                 None,
@@ -1124,7 +1132,7 @@ def add_is_codelist(obj):
 
         if value.get("type") == "object":
             add_is_codelist(value)
-        elif value.get("type") == "array" and value.get("items", {}).get("properties"):
+        elif _is_array_of_objects(value):
             add_is_codelist(value["items"])
 
     for value in obj.get("definitions", {}).values():
