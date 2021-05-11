@@ -85,7 +85,7 @@ def update_docs(document_parent, counter):
 
 
 def get_file_type(file_name):
-    """ Takes an filename (type string), and returns a string saying what type it is."""
+    """Takes an filename (type string), and returns a string saying what type it is."""
     # Older versions of this could take DJango objects to.
     # Tho we don't really want to support that, put in a check for that.
     if not isinstance(file_name, str) and hasattr(file_name, "path"):
