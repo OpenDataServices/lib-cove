@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.23.0] - 2021-05-12
+
+### Removed
+
+- Drop Python 3.5 support https://github.com/OpenDataServices/lib-cove/pull/81
+
+## CHanged
+
+- Remove unused dependencies from setup.py https://github.com/OpenDataServices/lib-cove/pull/80
+
 ## [0.22.1] - 2021-04-08
 
 ### Fixed
