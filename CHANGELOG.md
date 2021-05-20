@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.24.0] - 2021-05-20
+
 ## Changed
 
 - Update `unique_ids` override to support multiple ids. If you called `unique_ids` with `id_name="some_id"`, you now need to call `id_names=["some_id"]`. See this lib-cove-ocds PR as an example: https://github.com/open-contracting/lib-cove-ocds/pull/91/files
