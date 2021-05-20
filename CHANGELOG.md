@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Don't error on some decimals https://github.com/open-contracting/cove-ocds/issues/158
+
 ## [0.23.0] - 2021-05-12
 
 ### Removed

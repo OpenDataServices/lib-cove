@@ -2,6 +2,7 @@ import json
 import os
 from collections import OrderedDict
 from datetime import datetime
+from decimal import Decimal
 from unittest import mock
 
 import pytest
@@ -601,6 +602,26 @@ def test_validation_release_or_record_package(
     assert strip_nones(validation_error_jsons) == strip_nones(
         validation_error_jsons_expected
     )
+
+
+def test_dont_error_on_decimal_in_unique_validator_key():
+    class DummySchemaObj:
+        config = None
+        schema_host = None
+
+        def get_pkg_schema_obj(self):
+            return {
+                "type": "array",
+                "minItems": 2,
+            }
+
+    validation_errors = get_schema_validation_errors(
+        [Decimal("3.1")], DummySchemaObj(), "", {}, {}
+    )
+    assert len(validation_errors) == 1
+    validation_error_json = list(validation_errors.keys())[0]
+    assert "[3.1]" in validation_error_json
+    assert "[Decimal('3.1')] is too short" in validation_error_json
 
 
 @pytest.mark.parametrize(
