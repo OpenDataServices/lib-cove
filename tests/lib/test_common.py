@@ -5,6 +5,7 @@ from datetime import datetime
 from decimal import Decimal
 from unittest import mock
 
+import jsonschema
 import pytest
 from freezegun import freeze_time
 
@@ -20,7 +21,164 @@ from libcove.lib.common import (
     get_schema_validation_errors,
     org_id_file_fresh,
     schema_dict_fields_generator,
+    unique_ids,
 )
+
+
+def test_unique_ids_False():
+    ui = False
+    schema = {"uniqueItems": ui}
+    validator = jsonschema.Draft4Validator(schema=schema)
+    assert list(unique_ids(validator, ui, [], schema)) == []
+    assert list(unique_ids(validator, ui, [{}, {}], schema)) == []
+    assert list(unique_ids(validator, ui, [{"id": "1"}, {"id": "2"}], schema)) == []
+
+
+def test_unique_ids_True():
+    ui = True
+    schema = {"uniqueItems": ui}
+    validator = jsonschema.Draft4Validator(schema=schema)
+    # If all items are unique, there should be no errors
+    assert list(unique_ids(validator, ui, [], schema)) == []
+    assert list(unique_ids(validator, ui, [], schema, id_names=["id"])) == []
+    assert list(unique_ids(validator, ui, [], schema, id_names=["ocid"])) == []
+    assert list(unique_ids(validator, ui, [], schema, id_names=["ocid", "id"])) == []
+    assert list(unique_ids(validator, ui, [{"id": "1"}, {"id": "2"}], schema)) == []
+    assert (
+        list(
+            unique_ids(
+                validator, ui, [{"id": "1"}, {"id": "2"}], schema, id_names=["id"]
+            )
+        )
+        == []
+    )
+    assert (
+        list(
+            unique_ids(
+                validator, ui, [{"id": "1"}, {"id": "2"}], schema, id_names=["ocid"]
+            )
+        )
+        == []
+    )
+    assert (
+        list(
+            unique_ids(
+                validator,
+                ui,
+                [{"id": "1"}, {"id": "2"}],
+                schema,
+                id_names=["ocid", "id"],
+            )
+        )
+        == []
+    )
+    assert list(unique_ids(validator, ui, [], schema, id_names=["ocid", "id"])) == []
+    # If id is the same, but ocid is different, then we should get no errors
+    assert (
+        list(
+            unique_ids(
+                validator,
+                ui,
+                [{"ocid": "1", "id": "1"}, {"ocid": "2", "id": "1"}],
+                schema,
+                id_names=["ocid", "id"],
+            )
+        )
+        == []
+    )
+
+    def validation_errors_to_tuples(validation_errors):
+        return [
+            (str(validation_error), validation_error.error_id)
+            for validation_error in validation_errors
+        ]
+
+    validation_errors_to_tuples(unique_ids(validator, ui, [{}, {}], schema)) == [
+        ("Array has non-unique elements", "uniqueItems_no_ids")
+    ]
+    assert validation_errors_to_tuples(
+        unique_ids(validator, ui, [{"id": ""}, {"id": ""}], schema)
+    ) == [("Non-unique id values", "uniqueItems_with_id")]
+    assert validation_errors_to_tuples(
+        unique_ids(validator, ui, [{"id": "1"}, {"id": "1"}], schema)
+    ) == [("Non-unique id values", "uniqueItems_with_id")]
+
+    assert validation_errors_to_tuples(
+        unique_ids(validator, ui, [{}, {}], schema, id_names=["id"])
+    ) == [("Array has non-unique elements", "uniqueItems_no_ids")]
+    assert validation_errors_to_tuples(
+        unique_ids(validator, ui, [{"id": ""}, {"id": ""}], schema, id_names=["id"])
+    ) == [("Non-unique id values", "uniqueItems_with_id")]
+    assert (
+        validation_errors_to_tuples(
+            unique_ids(
+                validator,
+                ui,
+                [{"id": "1", "other": "a"}, {"id": "1", "other": "b"}],
+                schema,
+                id_names=["id"],
+            )
+        )
+        == [("Non-unique id values", "uniqueItems_with_id")]
+    )
+
+    assert validation_errors_to_tuples(
+        unique_ids(validator, ui, [{}, {}], schema, id_names=["ocid"])
+    ) == [("Array has non-unique elements", "uniqueItems_no_ids")]
+    assert validation_errors_to_tuples(
+        unique_ids(
+            validator, ui, [{"ocid": ""}, {"ocid": ""}], schema, id_names=["ocid"]
+        )
+    ) == [("Non-unique ocid values", "uniqueItems_with_ocid")]
+    assert (
+        validation_errors_to_tuples(
+            unique_ids(
+                validator,
+                ui,
+                [{"ocid": "1", "other": "a"}, {"ocid": "1", "other": "b"}],
+                schema,
+                id_names=["ocid"],
+            )
+        )
+        == [("Non-unique ocid values", "uniqueItems_with_ocid")]
+    )
+
+    assert validation_errors_to_tuples(
+        unique_ids(validator, ui, [{}, {}], schema, id_names=["ocid", "id"])
+    ) == [("Array has non-unique elements", "uniqueItems_no_ids")]
+    # If only one of the id names is present, then we get the generic message
+    assert (
+        validation_errors_to_tuples(
+            unique_ids(
+                validator,
+                ui,
+                [{"ocid": "1"}, {"ocid": "1"}],
+                schema,
+                id_names=["ocid", "id"],
+            )
+        )
+        == [("Array has non-unique elements", "uniqueItems_no_ids")]
+    )
+    assert validation_errors_to_tuples(
+        unique_ids(
+            validator, ui, [{"id": "1"}, {"id": "1"}], schema, id_names=["ocid", "id"]
+        )
+    ) == [("Array has non-unique elements", "uniqueItems_no_ids")]
+    assert (
+        validation_errors_to_tuples(
+            unique_ids(
+                validator,
+                ui,
+                [
+                    {"ocid": "1", "id": "1", "other": "a"},
+                    {"ocid": "1", "id": "1", "other": "b"},
+                ],
+                schema,
+                id_names=["ocid", "id"],
+            )
+        )
+        == [("Non-unique combination of ocid, id values", "uniqueItems_with_ocid__id")]
+    )
 
 
 def test_get_json_data_deprecated_fields():
