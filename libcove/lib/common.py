@@ -892,7 +892,9 @@ def get_schema_validation_errors(
         )
         if instance is not None:
             unique_validator_key["instance"] = instance
-        validation_errors[json.dumps(unique_validator_key)].append(value)
+        validation_errors[
+            json.dumps(unique_validator_key, default=decimal_default)
+        ].append(value)
     return dict(validation_errors)
 
 
