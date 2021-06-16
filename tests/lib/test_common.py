@@ -98,29 +98,58 @@ def test_unique_ids_True():
     ]
     assert validation_errors_to_tuples(
         unique_ids(validator, ui, [{"id": ""}, {"id": ""}], schema)
-    ) == [("Non-unique id values", "uniqueItems_with_id")]
+    ) == [
+        (
+            "Non-unique id values. There are grants in your data with the same Id. "
+            "Each Id must be unique so the grants can be distinguished from each other. "
+            "If there are duplicate grant records in your data these should be removed. "
+            "If different grants have the same Id these should be updated to make them unique.",
+            "uniqueItems_with_id",
+        )
+    ]
     assert validation_errors_to_tuples(
         unique_ids(validator, ui, [{"id": "1"}, {"id": "1"}], schema)
-    ) == [("Non-unique id values", "uniqueItems_with_id")]
+    ) == [
+        (
+            "Non-unique id values. There are grants in your data with the same Id. "
+            "Each Id must be unique so the grants can be distinguished from each other. "
+            "If there are duplicate grant records in your data these should be removed. "
+            "If different grants have the same Id these should be updated to make them unique.",
+            "uniqueItems_with_id",
+        )
+    ]
 
     assert validation_errors_to_tuples(
         unique_ids(validator, ui, [{}, {}], schema, id_names=["id"])
     ) == [("Array has non-unique elements", "uniqueItems_no_ids")]
     assert validation_errors_to_tuples(
         unique_ids(validator, ui, [{"id": ""}, {"id": ""}], schema, id_names=["id"])
-    ) == [("Non-unique id values", "uniqueItems_with_id")]
-    assert (
-        validation_errors_to_tuples(
-            unique_ids(
-                validator,
-                ui,
-                [{"id": "1", "other": "a"}, {"id": "1", "other": "b"}],
-                schema,
-                id_names=["id"],
-            )
+    ) == [
+        (
+            "Non-unique id values. There are grants in your data with the same Id. "
+            "Each Id must be unique so the grants can be distinguished from each other. "
+            "If there are duplicate grant records in your data these should be removed. "
+            "If different grants have the same Id these should be updated to make them unique.",
+            "uniqueItems_with_id",
         )
-        == [("Non-unique id values", "uniqueItems_with_id")]
-    )
+    ]
+    assert validation_errors_to_tuples(
+        unique_ids(
+            validator,
+            ui,
+            [{"id": "1", "other": "a"}, {"id": "1", "other": "b"}],
+            schema,
+            id_names=["id"],
+        )
+    ) == [
+        (
+            "Non-unique id values. There are grants in your data with the same Id. "
+            "Each Id must be unique so the grants can be distinguished from each other. "
+            "If there are duplicate grant records in your data these should be removed. "
+            "If different grants have the same Id these should be updated to make them unique.",
+            "uniqueItems_with_id",
+        )
+    ]
 
     assert validation_errors_to_tuples(
         unique_ids(validator, ui, [{}, {}], schema, id_names=["ocid"])
@@ -129,19 +158,32 @@ def test_unique_ids_True():
         unique_ids(
             validator, ui, [{"ocid": ""}, {"ocid": ""}], schema, id_names=["ocid"]
         )
-    ) == [("Non-unique ocid values", "uniqueItems_with_ocid")]
-    assert (
-        validation_errors_to_tuples(
-            unique_ids(
-                validator,
-                ui,
-                [{"ocid": "1", "other": "a"}, {"ocid": "1", "other": "b"}],
-                schema,
-                id_names=["ocid"],
-            )
+    ) == [
+        (
+            "Non-unique ocid values. There are grants in your data with the same Id. "
+            "Each Id must be unique so the grants can be distinguished from each other. "
+            "If there are duplicate grant records in your data these should be removed. "
+            "If different grants have the same Id these should be updated to make them unique.",
+            "uniqueItems_with_ocid",
         )
-        == [("Non-unique ocid values", "uniqueItems_with_ocid")]
-    )
+    ]
+    assert validation_errors_to_tuples(
+        unique_ids(
+            validator,
+            ui,
+            [{"ocid": "1", "other": "a"}, {"ocid": "1", "other": "b"}],
+            schema,
+            id_names=["ocid"],
+        )
+    ) == [
+        (
+            "Non-unique ocid values. There are grants in your data with the same Id. "
+            "Each Id must be unique so the grants can be distinguished from each other. "
+            "If there are duplicate grant records in your data these should be removed. "
+            "If different grants have the same Id these should be updated to make them unique.",
+            "uniqueItems_with_ocid",
+        )
+    ]
 
     assert validation_errors_to_tuples(
         unique_ids(validator, ui, [{}, {}], schema, id_names=["ocid", "id"])
@@ -164,21 +206,26 @@ def test_unique_ids_True():
             validator, ui, [{"id": "1"}, {"id": "1"}], schema, id_names=["ocid", "id"]
         )
     ) == [("Array has non-unique elements", "uniqueItems_no_ids")]
-    assert (
-        validation_errors_to_tuples(
-            unique_ids(
-                validator,
-                ui,
-                [
-                    {"ocid": "1", "id": "1", "other": "a"},
-                    {"ocid": "1", "id": "1", "other": "b"},
-                ],
-                schema,
-                id_names=["ocid", "id"],
-            )
+    assert validation_errors_to_tuples(
+        unique_ids(
+            validator,
+            ui,
+            [
+                {"ocid": "1", "id": "1", "other": "a"},
+                {"ocid": "1", "id": "1", "other": "b"},
+            ],
+            schema,
+            id_names=["ocid", "id"],
         )
-        == [("Non-unique combination of ocid, id values", "uniqueItems_with_ocid__id")]
-    )
+    ) == [
+        (
+            "Non-unique combination of ocid, id values. There are grants in your data with the same Id. "
+            "Each Id must be unique so the grants can be distinguished from each other. "
+            "If there are duplicate grant records in your data these should be removed. "
+            "If different grants have the same Id these should be updated to make them unique.",
+            "uniqueItems_with_ocid__id",
+        )
+    ]
 
 
 def test_get_json_data_deprecated_fields():
@@ -595,7 +642,12 @@ class DummyRecordSchemaObj:
             "",
             [
                 {
-                    "message": "Non-unique id values",
+                    "message": (
+                        "Non-unique id values. There are grants in your data with the same Id. "
+                        "Each Id must be unique so the grants can be distinguished from each other. "
+                        "If there are duplicate grant records in your data these should be removed. "
+                        "If different grants have the same Id these should be updated to make them unique."
+                    ),
                     "validator": "uniqueItems",
                     "assumption": None,
                     "message_type": "uniqueItems",

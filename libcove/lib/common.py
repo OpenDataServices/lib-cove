@@ -79,9 +79,21 @@ def unique_ids(validator, ui, instance, schema, id_names=["id"]):
 
         for non_unique_id in sorted(non_unique_ids):
             if len(id_names) == 1:
-                msg = "Non-unique {} values".format(id_names[0])
+                msg = (
+                    "Non-unique {} values. There are grants in your data with the same Id. "
+                    "Each Id must be unique so the grants can be distinguished from each other. "
+                    "If there are duplicate grant records in your data these should be removed. "
+                    "If different grants have the same Id these should be updated to make them unique."
+                    "".format(id_names[0])
+                )
             else:
-                msg = "Non-unique combination of {} values".format(", ".join(id_names))
+                msg = (
+                    "Non-unique combination of {} values. There are grants in your data with the same Id. "
+                    "Each Id must be unique so the grants can be distinguished from each other. "
+                    "If there are duplicate grant records in your data these should be removed. "
+                    "If different grants have the same Id these should be updated to make them unique."
+                    "".format(", ".join(id_names))
+                )
             err = ValidationError(msg, instance=", ".join(non_unique_id))
             err.error_id = "uniqueItems_with_{}".format("__".join(id_names))
             yield err
