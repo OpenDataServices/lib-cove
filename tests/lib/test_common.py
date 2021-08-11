@@ -12,8 +12,11 @@ from freezegun import freeze_time
 from libcove.lib.common import (
     SchemaJsonMixin,
     _get_schema_deprecated_paths,
+    add_field_coverage,
+    add_field_coverage_percentages,
     fields_present_generator,
     get_additional_fields_info,
+    get_field_coverage,
     get_fields_present,
     get_json_data_deprecated_fields,
     get_json_data_generic_paths,
@@ -928,3 +931,282 @@ def test_get_orgids_prefixes_opens_and_moves_file_when_updating(
         assert rename_mock.call_count == 1
         assert rename_mock.call_args_list[0][0][0] == "/path/to/tmp"
         assert rename_mock.call_args_list[0][0][1].endswith("org-ids.json")
+
+
+def test_add_field_coverage():
+    assert add_field_coverage({}, {}) == {}
+    assert add_field_coverage({}, {"test": "not empty"}) == {}
+    assert add_field_coverage({"properties": {}}, {}) == {"properties": {}}
+    assert add_field_coverage({"properties": {"test": {}}}, {}) == {
+        "properties": {"test": {"coverage": {"checks": 1}}}
+    }
+    assert add_field_coverage({"properties": {"test": {}}}, {"test": None}) == {
+        "properties": {"test": {"coverage": {"checks": 1}}}
+    }
+    assert add_field_coverage({"properties": {"test": {}}}, {"test": []}) == {
+        "properties": {"test": {"coverage": {"checks": 1}}}
+    }
+    assert add_field_coverage({"properties": {"test": {}}}, {"test": {}}) == {
+        "properties": {"test": {"coverage": {"checks": 1}}}
+    }
+    assert add_field_coverage({"properties": {"test": {}}}, {"test": 0}) == {
+        "properties": {"test": {"coverage": {"checks": 1}}}
+    }
+    assert add_field_coverage({"properties": {"test": {}}}, {"test": ""}) == {
+        "properties": {"test": {"coverage": {"checks": 1}}}
+    }
+    assert add_field_coverage({"properties": {"test": {}}}, {"test": "not empty"}) == {
+        "properties": {"test": {"coverage": {"successes": 1, "checks": 1}}}
+    }
+
+    assert add_field_coverage({"properties": {"parent": {"properties": {}}}}, {}) == {
+        "properties": {"parent": {"coverage": {"checks": 1}, "properties": {}}}
+    }
+    assert add_field_coverage(
+        {"properties": {"parent": {"properties": {"test": {}}}}}, {"parent": {}}
+    ) == {
+        "properties": {
+            "parent": {
+                "coverage": {"checks": 1},
+                "properties": {"test": {"coverage": {"checks": 1}}},
+            }
+        }
+    }
+    assert add_field_coverage(
+        {"properties": {"parent": {"properties": {"test": {}}}}},
+        {"parent": {"test": {}}},
+    ) == {
+        "properties": {
+            "parent": {
+                "coverage": {
+                    "successes": 1,
+                    "checks": 1,
+                },
+                "properties": {"test": {"coverage": {"checks": 1}}},
+            }
+        }
+    }
+    assert add_field_coverage(
+        {"properties": {"parent": {"properties": {"test": {}}}}},
+        {"parent": {"test": "not empty"}},
+    ) == {
+        "properties": {
+            "parent": {
+                "coverage": {
+                    "successes": 1,
+                    "checks": 1,
+                },
+                "properties": {"test": {"coverage": {"successes": 1, "checks": 1}}},
+            }
+        }
+    }
+    assert add_field_coverage(
+        {"properties": {"parent": {"properties": {"test": {}}}}},
+        {
+            "notinschema": {"notinschemachild": "not empty"},
+            "parent": {"notinschemaeither": "not empty", "test": "not empty"},
+        },
+    ) == {
+        "properties": {
+            "parent": {
+                "coverage": {
+                    "successes": 1,
+                    "checks": 1,
+                },
+                "properties": {"test": {"coverage": {"successes": 1, "checks": 1}}},
+            }
+        }
+    }
+
+    assert add_field_coverage({"items": {}}, []) == {"items": {}}
+    assert add_field_coverage({"items": {"properties": {}}}, []) == {
+        "items": {"properties": {}}
+    }
+    assert add_field_coverage({"items": {"properties": {"test": {}}}}, []) == {
+        "items": {"properties": {"test": {}}}
+    }
+    assert add_field_coverage({"items": {"properties": {"test": {}}}}, [{}]) == {
+        "items": {"properties": {"test": {"coverage": {"checks": 1}}}}
+    }
+    assert add_field_coverage(
+        {"items": {"properties": {"test": {}}}}, [{"test": "not empty"}]
+    ) == {
+        "items": {"properties": {"test": {"coverage": {"successes": 1, "checks": 1}}}}
+    }
+    assert add_field_coverage(
+        {"items": {"properties": {"test": {}}}}, [{"test": "not empty"}, {}, {}]
+    ) == {
+        "items": {"properties": {"test": {"coverage": {"successes": 1, "checks": 3}}}}
+    }
+
+    assert add_field_coverage(
+        {
+            "items": {
+                "properties": {
+                    "parent": {"items": {"properties": {"child1": {}, "child2": {}}}}
+                }
+            }
+        },
+        [{}, {"parent": []}, {"parent": [{}]}, {"parent": [{"child1": "not empty"}]}],
+    ) == {
+        "items": {
+            "properties": {
+                "parent": {
+                    "coverage": {
+                        "successes": 2,
+                        "checks": 4,
+                    },
+                    "items": {
+                        "properties": {
+                            "child1": {"coverage": {"successes": 1, "checks": 2}},
+                            "child2": {"coverage": {"checks": 2}},
+                        }
+                    },
+                }
+            }
+        }
+    }
+
+
+def test_add_field_coverage_percentages():
+    assert add_field_coverage_percentages({}) == {}
+    assert add_field_coverage_percentages({"properties": {}}) == {"properties": {}}
+    assert add_field_coverage_percentages({"properties": {"test": {}}}) == {
+        "properties": {
+            "test": {"coverage": {"successes": 0, "checks": 0, "percentage": 0}}
+        }
+    }
+    assert add_field_coverage_percentages(
+        {"properties": {"test": {"coverage": {"checks": 3}}}}
+    ) == {
+        "properties": {
+            "test": {"coverage": {"successes": 0, "checks": 3, "percentage": 0}}
+        }
+    }
+    assert add_field_coverage_percentages(
+        {"properties": {"test": {"coverage": {"successes": 1, "checks": 3}}}}
+    ) == {
+        "properties": {
+            "test": {"coverage": {"successes": 1, "checks": 3, "percentage": 33}}
+        }
+    }
+
+    assert add_field_coverage_percentages({"properties": {"test": {}}}) == {
+        "properties": {
+            "test": {"coverage": {"successes": 0, "checks": 0, "percentage": 0}}
+        }
+    }
+    assert add_field_coverage_percentages(
+        {"properties": {"test": {"coverage": {"checks": 3}}}}
+    ) == {
+        "properties": {
+            "test": {"coverage": {"successes": 0, "checks": 3, "percentage": 0}}
+        }
+    }
+    assert add_field_coverage_percentages(
+        {"properties": {"test": {"coverage": {"successes": 1, "checks": 3}}}}
+    ) == {
+        "properties": {
+            "test": {"coverage": {"successes": 1, "checks": 3, "percentage": 33}}
+        }
+    }
+
+    assert add_field_coverage_percentages(
+        {"items": {"properties": {"test": {"coverage": {"successes": 1, "checks": 3}}}}}
+    ) == {
+        "items": {
+            "properties": {
+                "test": {"coverage": {"successes": 1, "checks": 3, "percentage": 33}}
+            }
+        }
+    }
+
+
+def schema_obj_from_str(schema_str):
+    schema_obj = SchemaJsonMixin()
+    schema_obj.schema_host = ""
+    schema_obj.schema_str = schema_str
+    return schema_obj
+
+
+def test_get_field_coverage():
+    assert get_field_coverage(schema_obj_from_str("{}"), []) == {}
+    assert get_field_coverage(schema_obj_from_str("{}"), [{}]) == {}
+    assert (
+        get_field_coverage(
+            schema_obj_from_str(
+                """{
+                    "properties": {
+                        "test": {}
+                    }
+                }"""
+            ),
+            [{}],
+        )
+        == {
+            "properties": {
+                "test": {"coverage": {"checks": 1, "successes": 0, "percentage": 0}}
+            }
+        }
+    )
+
+    # Test that refs to the same object are counted separately
+    assert get_field_coverage(
+        schema_obj_from_str(
+            """{
+                    "properties": {
+                        "test1": {"$ref": "#/definitions/Test"},
+                        "test2": {"$ref": "#/definitions/Test"}
+                    },
+                    "definitions": {
+                        "Test": {
+                            "properties": {"child": {}}
+                        }
+                    }
+            }"""
+        ),
+        [{}, {"test1": {"child": "not empty"}}, {"test1": {}}],
+    )["properties"] == {
+        "test1": {
+            "properties": {
+                "child": {"coverage": {"checks": 2, "successes": 1, "percentage": 50}}
+            },
+            "coverage": {
+                "checks": 3,
+                "successes": 1,
+                "percentage": 33,
+            },
+        },
+        "test2": {
+            "properties": {
+                "child": {"coverage": {"checks": 0, "successes": 0, "percentage": 0}}
+            },
+            "coverage": {
+                "checks": 3,
+                "successes": 0,
+                "percentage": 0,
+            },
+        },
+    }
+
+
+def common_fixtures(filename):
+    return os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "fixtures", "common", filename
+    )
+
+
+def test_get_field_coverage_oc4ids():
+    # Compare the actual json output, to ensure order is the same
+    assert (
+        json.dumps(
+            get_field_coverage(
+                schema_obj_from_str(
+                    open(common_fixtures("oc4ids_project-schema_0__9__2.json")).read()
+                ),
+                json.load(open(common_fixtures("oc4ids_example.json")))["projects"],
+            ),
+            indent=2,
+        )
+        == open(common_fixtures("oc4ids_example_coverage.json")).read()
+    )

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## Added
+
+- Add a function to calculate field coverage https://github.com/open-contracting/cove-oc4ids/issues/98
+
 ## [0.24.0] - 2021-05-20
 
 ## Changed

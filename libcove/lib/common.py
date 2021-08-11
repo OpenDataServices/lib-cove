@@ -1,4 +1,5 @@
 import collections
+import copy
 import csv
 import datetime
 import functools
@@ -1350,3 +1351,112 @@ def get_orgids_prefixes(orgids_url=None):
         os.rename(tmp.name, local_org_ids_file)
     # Return either the original file data, if it was found to be fresh, or the new data, if we were able to retrieve it.
     return [org_list["code"] for org_list in org_id_file_contents["lists"]]
+
+
+def add_field_coverage(schema_dict, json_data):
+    """
+    Takes a schema dict and adds non-zero coverage counts of successes and
+    checks, based on what is in the json data.
+
+    Doesn't support all possible json schemas e.g. anyOf, allOf, oneOf and an
+    array as the value for items are not supported, and will be ignored, along
+    with all their children.
+
+    """
+    if not isinstance(schema_dict, dict):
+        return schema_dict
+
+    schema_properties = schema_dict.get("properties")
+    if isinstance(schema_properties, dict) and isinstance(json_data, dict):
+        for schema_property, sub_schema_obj in schema_properties.items():
+            if "coverage" not in sub_schema_obj:
+                sub_schema_obj["coverage"] = {}
+            sub_schema_obj["coverage"]["checks"] = (
+                sub_schema_obj.get("coverage", {}).get("checks", 0) + 1
+            )
+            if json_data.get(schema_property):
+                sub_schema_obj["coverage"]["successes"] = (
+                    sub_schema_obj.get("coverage", {}).get("successes", 0) + 1
+                )
+            add_field_coverage(sub_schema_obj, json_data.get(schema_property))
+
+    schema_items = schema_dict.get("items")
+    if isinstance(schema_items, dict) and isinstance(json_data, list):
+        for json_data_item in json_data:
+            add_field_coverage(schema_items, json_data_item)
+    return schema_dict
+
+
+def add_field_coverage_percentages(schema_dict):
+    """
+    Takes the output of add_field_coverage and adds percentages, and also zero
+    counts of successes and checks.
+
+    """
+    if not isinstance(schema_dict, dict):
+        return schema_dict
+
+    schema_properties = schema_dict.get("properties")
+    if isinstance(schema_properties, dict):
+        for schema_property, sub_schema_obj in schema_properties.items():
+            if "coverage" not in sub_schema_obj:
+                sub_schema_obj["coverage"] = {}
+            if "checks" not in sub_schema_obj["coverage"]:
+                sub_schema_obj["coverage"]["checks"] = 0
+            if "successes" not in sub_schema_obj["coverage"]:
+                sub_schema_obj["coverage"]["successes"] = 0
+            if (
+                sub_schema_obj["coverage"]["checks"] == 0
+                and sub_schema_obj["coverage"]["successes"] == 0
+            ):
+                sub_schema_obj["coverage"]["percentage"] = 0
+            else:
+                sub_schema_obj["coverage"]["percentage"] = int(
+                    sub_schema_obj["coverage"]["successes"]
+                    / sub_schema_obj["coverage"]["checks"]
+                    * 100
+                )
+            add_field_coverage_percentages(sub_schema_obj)
+
+    add_field_coverage_percentages(schema_dict.get("items"))
+    return schema_dict
+
+
+def dict_copy(dict_in):
+    """
+    Make a copy of a dict, and any other dicts nested inside it.
+
+    We use this instead of copy.deepcopy because that keeps a memo, and creates
+    only one new object for objects that are the same.
+
+    This doesn't deal with the use of other objects for nesting, e.g. lists,
+    because the code using the resulting structure only descends into dicts.
+
+    """
+    dict_out = copy.copy(dict_in)
+    for key, value in dict_out.items():
+        if isinstance(value, dict):
+            dict_out[key] = dict_copy(value)
+    return dict_out
+
+
+def get_field_coverage(schema_obj, json_data_list):
+    """
+    Returns a copy of the schema with coverage counts of successes, checks and
+    percentages annoated.
+
+    json_data_list is the main list of objects in the json data, as we use the
+    main schema, not the package schema.
+    e.g. for OC4IDS we call this function with:
+    get_field_coverage(schema_obj, json_data.get("projects")
+
+    """
+    # Need to call dict_copy here because jsonref returns the same dict when
+    # there's mutliple refs to the same place.
+    schema_dict = dict_copy(schema_obj.get_schema_obj(deref=True))
+    if not isinstance(json_data_list, list):
+        return {}
+    for json_data_item in json_data_list:
+        add_field_coverage(schema_dict, json_data_item)
+    add_field_coverage_percentages(schema_dict)
+    return schema_dict
