@@ -44,13 +44,6 @@ jobs:
         pip install -e ./lib-cove-${{ matrix.cove }}/
         pip list
 
-    - name: Use branch
-      if: matrix.cove == 'ocds'
-      run: |
-        cd lib-cove-ocds
-        git checkout cove-1253-multiple-ids
-        pip install -e .
-
     - name: Compile Messages
       if: matrix.cove == 'ocds'
       run: |
