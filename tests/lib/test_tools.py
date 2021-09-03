@@ -34,7 +34,7 @@ def test_get_file_unrecognised_file_type_string():
 
 
 def test_ignore_errors():
-    """ Test the ignore_errors function """
+    """Test the ignore_errors function"""
 
     # Test data that would in real usage come from having parsed a json
     # document
