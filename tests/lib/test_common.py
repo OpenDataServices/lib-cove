@@ -1,21 +1,187 @@
 import json
 import os
 from collections import OrderedDict
+from datetime import datetime
+from decimal import Decimal
+from unittest import mock
 
+import jsonschema
 import pytest
+from freezegun import freeze_time
 
 from libcove.lib.common import (
     SchemaJsonMixin,
     _get_schema_deprecated_paths,
+    add_field_coverage,
+    add_field_coverage_percentages,
     fields_present_generator,
     get_additional_fields_info,
+    get_field_coverage,
     get_fields_present,
     get_json_data_deprecated_fields,
     get_json_data_generic_paths,
     get_orgids_prefixes,
     get_schema_validation_errors,
+    org_id_file_fresh,
     schema_dict_fields_generator,
+    unique_ids,
 )
+
+
+def test_unique_ids_False():
+    ui = False
+    schema = {"uniqueItems": ui}
+    validator = jsonschema.Draft4Validator(schema=schema)
+    assert list(unique_ids(validator, ui, [], schema)) == []
+    assert list(unique_ids(validator, ui, [{}, {}], schema)) == []
+    assert list(unique_ids(validator, ui, [{"id": "1"}, {"id": "2"}], schema)) == []
+
+
+def test_unique_ids_True():
+    ui = True
+    schema = {"uniqueItems": ui}
+    validator = jsonschema.Draft4Validator(schema=schema)
+    # If all items are unique, there should be no errors
+    assert list(unique_ids(validator, ui, [], schema)) == []
+    assert list(unique_ids(validator, ui, [], schema, id_names=["id"])) == []
+    assert list(unique_ids(validator, ui, [], schema, id_names=["ocid"])) == []
+    assert list(unique_ids(validator, ui, [], schema, id_names=["ocid", "id"])) == []
+    assert list(unique_ids(validator, ui, [{"id": "1"}, {"id": "2"}], schema)) == []
+    assert (
+        list(
+            unique_ids(
+                validator, ui, [{"id": "1"}, {"id": "2"}], schema, id_names=["id"]
+            )
+        )
+        == []
+    )
+    assert (
+        list(
+            unique_ids(
+                validator, ui, [{"id": "1"}, {"id": "2"}], schema, id_names=["ocid"]
+            )
+        )
+        == []
+    )
+    assert (
+        list(
+            unique_ids(
+                validator,
+                ui,
+                [{"id": "1"}, {"id": "2"}],
+                schema,
+                id_names=["ocid", "id"],
+            )
+        )
+        == []
+    )
+    assert list(unique_ids(validator, ui, [], schema, id_names=["ocid", "id"])) == []
+    # If id is the same, but ocid is different, then we should get no errors
+    assert (
+        list(
+            unique_ids(
+                validator,
+                ui,
+                [{"ocid": "1", "id": "1"}, {"ocid": "2", "id": "1"}],
+                schema,
+                id_names=["ocid", "id"],
+            )
+        )
+        == []
+    )
+
+    def validation_errors_to_tuples(validation_errors):
+        return [
+            (str(validation_error), validation_error.error_id)
+            for validation_error in validation_errors
+        ]
+
+    validation_errors_to_tuples(unique_ids(validator, ui, [{}, {}], schema)) == [
+        ("Array has non-unique elements", "uniqueItems_no_ids")
+    ]
+    assert validation_errors_to_tuples(
+        unique_ids(validator, ui, [{"id": ""}, {"id": ""}], schema)
+    ) == [("Non-unique id values", "uniqueItems_with_id")]
+    assert validation_errors_to_tuples(
+        unique_ids(validator, ui, [{"id": "1"}, {"id": "1"}], schema)
+    ) == [("Non-unique id values", "uniqueItems_with_id")]
+
+    assert validation_errors_to_tuples(
+        unique_ids(validator, ui, [{}, {}], schema, id_names=["id"])
+    ) == [("Array has non-unique elements", "uniqueItems_no_ids")]
+    assert validation_errors_to_tuples(
+        unique_ids(validator, ui, [{"id": ""}, {"id": ""}], schema, id_names=["id"])
+    ) == [("Non-unique id values", "uniqueItems_with_id")]
+    assert (
+        validation_errors_to_tuples(
+            unique_ids(
+                validator,
+                ui,
+                [{"id": "1", "other": "a"}, {"id": "1", "other": "b"}],
+                schema,
+                id_names=["id"],
+            )
+        )
+        == [("Non-unique id values", "uniqueItems_with_id")]
+    )
+
+    assert validation_errors_to_tuples(
+        unique_ids(validator, ui, [{}, {}], schema, id_names=["ocid"])
+    ) == [("Array has non-unique elements", "uniqueItems_no_ids")]
+    assert validation_errors_to_tuples(
+        unique_ids(
+            validator, ui, [{"ocid": ""}, {"ocid": ""}], schema, id_names=["ocid"]
+        )
+    ) == [("Non-unique ocid values", "uniqueItems_with_ocid")]
+    assert (
+        validation_errors_to_tuples(
+            unique_ids(
+                validator,
+                ui,
+                [{"ocid": "1", "other": "a"}, {"ocid": "1", "other": "b"}],
+                schema,
+                id_names=["ocid"],
+            )
+        )
+        == [("Non-unique ocid values", "uniqueItems_with_ocid")]
+    )
+
+    assert validation_errors_to_tuples(
+        unique_ids(validator, ui, [{}, {}], schema, id_names=["ocid", "id"])
+    ) == [("Array has non-unique elements", "uniqueItems_no_ids")]
+    # If only one of the id names is present, then we get the generic message
+    assert (
+        validation_errors_to_tuples(
+            unique_ids(
+                validator,
+                ui,
+                [{"ocid": "1"}, {"ocid": "1"}],
+                schema,
+                id_names=["ocid", "id"],
+            )
+        )
+        == [("Array has non-unique elements", "uniqueItems_no_ids")]
+    )
+    assert validation_errors_to_tuples(
+        unique_ids(
+            validator, ui, [{"id": "1"}, {"id": "1"}], schema, id_names=["ocid", "id"]
+        )
+    ) == [("Array has non-unique elements", "uniqueItems_no_ids")]
+    assert (
+        validation_errors_to_tuples(
+            unique_ids(
+                validator,
+                ui,
+                [
+                    {"ocid": "1", "id": "1", "other": "a"},
+                    {"ocid": "1", "id": "1", "other": "b"},
+                ],
+                schema,
+                id_names=["ocid", "id"],
+            )
+        )
+        == [("Non-unique combination of ocid, id values", "uniqueItems_with_ocid__id")]
+    )
 
 
 def test_get_json_data_deprecated_fields():
@@ -386,11 +552,17 @@ def test_get_additional_fields_info():
     )
 
 
-def test_get_orgids_prefixes_live():
-    data = get_orgids_prefixes()
+@freeze_time("2020-01-02")
+def test_get_orgids_prefixes_live(requests_mock):
+    file_contents = mock.mock_open(
+        read_data='{"downloaded": "2020-01-01", "lists": [{"code": "001"}, {"code": "002"}]}'
+    )
+    text = {"lists": [{"code": str(i)} for i in range(150)]}
+    requests_mock.get("http://org-id.guide/download.json", text=json.dumps(text))
 
-    # There is not much we can really test here, as the results will depend on the live data!
-    assert len(data) > 150
+    with mock.patch("builtins.open", file_contents):
+        data = get_orgids_prefixes()
+        assert len(data) == 150
 
 
 class DummyReleaseSchemaObj:
@@ -427,7 +599,6 @@ class DummyRecordSchemaObj:
             [
                 {
                     "message": "Non-unique id values",
-                    "message_safe": "Non-unique id values",
                     "validator": "uniqueItems",
                     "assumption": None,
                     "message_type": "uniqueItems",
@@ -450,7 +621,6 @@ class DummyRecordSchemaObj:
             [
                 {
                     "message": "'id' is missing but required",
-                    "message_safe": "<code>id</code> is missing but required",
                     "validator": "required",
                     "assumption": None,
                     "message_type": "required",
@@ -463,7 +633,6 @@ class DummyRecordSchemaObj:
                 },
                 {
                     "message": "Array has non-unique elements",
-                    "message_safe": "Array has non-unique elements",
                     "validator": "uniqueItems",
                     "assumption": None,
                     "message_type": "uniqueItems",
@@ -483,7 +652,6 @@ class DummyRecordSchemaObj:
             [
                 {
                     "message": "'ocid' is missing but required",
-                    "message_safe": "<code>ocid</code> is missing but required",
                     "validator": "required",
                     "assumption": None,
                     "message_type": "required",
@@ -496,7 +664,6 @@ class DummyRecordSchemaObj:
                 },
                 {
                     "message": "Array has non-unique elements",
-                    "message_safe": "Array has non-unique elements",
                     "validator": "uniqueItems",
                     "assumption": None,
                     "message_type": "uniqueItems",
@@ -518,7 +685,6 @@ class DummyRecordSchemaObj:
             [
                 {
                     "message": "'id' is missing but required",
-                    "message_safe": "<code>id</code> is missing but required",
                     "validator": "required",
                     "assumption": None,
                     "message_type": "required",
@@ -538,7 +704,6 @@ class DummyRecordSchemaObj:
             [
                 {
                     "message": "'ocid' is missing but required",
-                    "message_safe": "<code>ocid</code> is missing but required",
                     "validator": "required",
                     "assumption": None,
                     "message_type": "required",
@@ -587,4 +752,461 @@ def test_validation_release_or_record_package(
         del validation_error_json["validator_value"]
         validation_error_jsons.append(validation_error_json)
 
-    assert validation_error_jsons == validation_error_jsons_expected
+    def strip_nones(list_of_dicts):
+        out = []
+        for a_dict in list_of_dicts:
+            out.append(
+                {key: value for key, value in a_dict.items() if value is not None}
+            )
+        return out
+
+    assert strip_nones(validation_error_jsons) == strip_nones(
+        validation_error_jsons_expected
+    )
+
+
+def test_dont_error_on_decimal_in_unique_validator_key():
+    class DummySchemaObj:
+        config = None
+        schema_host = None
+
+        def get_pkg_schema_obj(self):
+            return {
+                "type": "array",
+                "minItems": 2,
+            }
+
+    validation_errors = get_schema_validation_errors(
+        [Decimal("3.1")], DummySchemaObj(), "", {}, {}
+    )
+    assert len(validation_errors) == 1
+    validation_error_json = list(validation_errors.keys())[0]
+    assert "[3.1]" in validation_error_json
+    assert "[Decimal('3.1')] is too short" in validation_error_json
+
+
+def test_property_that_is_not_json_schema_doesnt_raise_exception(caplog, tmpdir):
+    tmpdir.join("test.json").write(
+        json.dumps({"properties": {"bad_property": "not_a_json_schema"}})
+    )
+
+    class DummySchemaObj:
+        config = None
+        schema_host = os.path.join(str(tmpdir), "")
+
+        def get_pkg_schema_obj(self):
+            return {"$ref": "test.json"}
+
+    validation_errors = get_schema_validation_errors({}, DummySchemaObj(), "", {}, {})
+    assert validation_errors == {}
+    assert (
+        "A 'properties' object contains a 'bad_property' value that is not a JSON Schema: 'not_a_json_schema'"
+        in caplog.text
+    )
+
+
+@pytest.mark.parametrize(
+    ("filedate", "checkdate", "result"),
+    (
+        ("2020-01-15", "2020-01-14", True),
+        ("2020-01-15", "2020-01-16", False),
+        ("2020-01-15", "2020-01-15", True),
+        ("1998-01-01", "1999-01-01", False),
+        ("1999-01-01", "1998-01-01", True),
+        ("2000-01-01", "2020-01-01", False),
+    ),
+)
+def test_org_id_file_fresh_dates(filedate, checkdate, result):
+    """Check that the date in the file data is greater than or equal to check date."""
+    assert (
+        org_id_file_fresh(
+            {"downloaded": filedate}, datetime.strptime(checkdate, "%Y-%m-%d").date()
+        )
+        is result
+    )
+
+
+@freeze_time("1955-11-12")
+def test_get_orgids_prefixes_does_not_make_request_when_in_date_file_found(
+    requests_mock,
+):
+    file_data = {
+        "downloaded": "2020-01-01",
+        "lists": [{"code": "001"}, {"code": "002"}],
+    }
+
+    with mock.patch("builtins.open", mock.mock_open(read_data=json.dumps(file_data))):
+        get_orgids_prefixes()
+        assert not requests_mock.called
+
+
+@freeze_time("2020-01-02")
+def test_get_orgids_prefixes_makes_request_when_file_out_of_date(requests_mock):
+    file_data = {
+        "downloaded": "2020-01-01",
+        "lists": [{"code": "001"}, {"code": "002"}],
+    }
+    request_data = {"lists": [{"code": "001"}, {"code": "002"}]}
+
+    requests_mock.get(
+        "http://org-id.guide/download.json", text=json.dumps(request_data)
+    )
+
+    with mock.patch("builtins.open", mock.mock_open(read_data=json.dumps(file_data))):
+        get_orgids_prefixes()
+        assert requests_mock.called
+
+
+@freeze_time("2020-01-02")
+def test_get_orgids_prefixes_returns_file_ids_when_file_in_date(requests_mock):
+    file_data = {
+        "downloaded": "2020-01-02",
+        "lists": [{"code": "file-id-1"}, {"code": "file-id-2"}],
+    }
+
+    requests_mock.get("http://org-id.guide/download.json")
+
+    with mock.patch("builtins.open", mock.mock_open(read_data=json.dumps(file_data))):
+        assert sorted(get_orgids_prefixes()) == ["file-id-1", "file-id-2"]
+
+
+@freeze_time("2020-01-02")
+def test_get_orgids_prefixes_returns_downloaded_ids_when_file_out_of_date(
+    requests_mock,
+):
+    file_data = {
+        "downloaded": "2020-01-01",
+        "lists": [{"code": "file-id-1"}, {"code": "file-id-2"}],
+    }
+    request_data = {
+        "lists": [{"code": "dl-id-001"}, {"code": "dl-id-002"}, {"code": "dl-id-003"}]
+    }
+
+    requests_mock.get(
+        "http://org-id.guide/download.json", text=json.dumps(request_data)
+    )
+
+    with mock.patch("builtins.open", mock.mock_open(read_data=json.dumps(file_data))):
+        assert sorted(get_orgids_prefixes()) == ["dl-id-001", "dl-id-002", "dl-id-003"]
+
+
+@freeze_time("2020-01-02")
+def test_get_orgids_prefixes_opens_file_once_when_in_date(requests_mock):
+    file_data = {
+        "downloaded": "2020-01-02",
+        "lists": [{"code": "file-id-1"}, {"code": "file-id-2"}],
+    }
+
+    with mock.patch(
+        "builtins.open", mock.mock_open(read_data=json.dumps(file_data))
+    ) as file_mock:
+        get_orgids_prefixes()
+        assert file_mock.call_count == 1
+
+
+@freeze_time("2020-01-02")
+@mock.patch("libcove.lib.common.NamedTemporaryFile")
+@mock.patch("libcove.lib.common.os.rename")
+def test_get_orgids_prefixes_opens_and_moves_file_when_updating(
+    rename_mock, tmp_mock, requests_mock
+):
+    tmp_mock.return_value.__enter__.return_value.name = "/path/to/tmp"
+    file_data = {
+        "downloaded": "2020-01-01",
+        "lists": [{"code": "file-id-1"}, {"code": "file-id-2"}],
+    }
+    request_data = {
+        "lists": [{"code": "dl-id-001"}, {"code": "dl-id-002"}, {"code": "dl-id-003"}]
+    }
+
+    requests_mock.get(
+        "http://org-id.guide/download.json", text=json.dumps(request_data)
+    )
+
+    with mock.patch(
+        "builtins.open", mock.mock_open(read_data=json.dumps(file_data))
+    ) as file_mock:
+        get_orgids_prefixes()
+        assert file_mock.call_count == 1
+        assert rename_mock.call_count == 1
+        assert rename_mock.call_args_list[0][0][0] == "/path/to/tmp"
+        assert rename_mock.call_args_list[0][0][1].endswith("org-ids.json")
+
+
+def test_add_field_coverage():
+    assert add_field_coverage({}, {}) == {}
+    assert add_field_coverage({}, {"test": "not empty"}) == {}
+    assert add_field_coverage({"properties": {}}, {}) == {"properties": {}}
+    assert add_field_coverage({"properties": {"test": {}}}, {}) == {
+        "properties": {"test": {"coverage": {"checks": 1}}}
+    }
+    assert add_field_coverage({"properties": {"test": {}}}, {"test": None}) == {
+        "properties": {"test": {"coverage": {"checks": 1}}}
+    }
+    assert add_field_coverage({"properties": {"test": {}}}, {"test": []}) == {
+        "properties": {"test": {"coverage": {"checks": 1}}}
+    }
+    assert add_field_coverage({"properties": {"test": {}}}, {"test": {}}) == {
+        "properties": {"test": {"coverage": {"checks": 1}}}
+    }
+    assert add_field_coverage({"properties": {"test": {}}}, {"test": 0}) == {
+        "properties": {"test": {"coverage": {"checks": 1}}}
+    }
+    assert add_field_coverage({"properties": {"test": {}}}, {"test": ""}) == {
+        "properties": {"test": {"coverage": {"checks": 1}}}
+    }
+    assert add_field_coverage({"properties": {"test": {}}}, {"test": "not empty"}) == {
+        "properties": {"test": {"coverage": {"successes": 1, "checks": 1}}}
+    }
+
+    assert add_field_coverage({"properties": {"parent": {"properties": {}}}}, {}) == {
+        "properties": {"parent": {"coverage": {"checks": 1}, "properties": {}}}
+    }
+    assert add_field_coverage(
+        {"properties": {"parent": {"properties": {"test": {}}}}}, {"parent": {}}
+    ) == {
+        "properties": {
+            "parent": {
+                "coverage": {"checks": 1},
+                "properties": {"test": {"coverage": {"checks": 1}}},
+            }
+        }
+    }
+    assert add_field_coverage(
+        {"properties": {"parent": {"properties": {"test": {}}}}},
+        {"parent": {"test": {}}},
+    ) == {
+        "properties": {
+            "parent": {
+                "coverage": {
+                    "successes": 1,
+                    "checks": 1,
+                },
+                "properties": {"test": {"coverage": {"checks": 1}}},
+            }
+        }
+    }
+    assert add_field_coverage(
+        {"properties": {"parent": {"properties": {"test": {}}}}},
+        {"parent": {"test": "not empty"}},
+    ) == {
+        "properties": {
+            "parent": {
+                "coverage": {
+                    "successes": 1,
+                    "checks": 1,
+                },
+                "properties": {"test": {"coverage": {"successes": 1, "checks": 1}}},
+            }
+        }
+    }
+    assert add_field_coverage(
+        {"properties": {"parent": {"properties": {"test": {}}}}},
+        {
+            "notinschema": {"notinschemachild": "not empty"},
+            "parent": {"notinschemaeither": "not empty", "test": "not empty"},
+        },
+    ) == {
+        "properties": {
+            "parent": {
+                "coverage": {
+                    "successes": 1,
+                    "checks": 1,
+                },
+                "properties": {"test": {"coverage": {"successes": 1, "checks": 1}}},
+            }
+        }
+    }
+
+    assert add_field_coverage({"items": {}}, []) == {"items": {}}
+    assert add_field_coverage({"items": {"properties": {}}}, []) == {
+        "items": {"properties": {}}
+    }
+    assert add_field_coverage({"items": {"properties": {"test": {}}}}, []) == {
+        "items": {"properties": {"test": {}}}
+    }
+    assert add_field_coverage({"items": {"properties": {"test": {}}}}, [{}]) == {
+        "items": {"properties": {"test": {"coverage": {"checks": 1}}}}
+    }
+    assert add_field_coverage(
+        {"items": {"properties": {"test": {}}}}, [{"test": "not empty"}]
+    ) == {
+        "items": {"properties": {"test": {"coverage": {"successes": 1, "checks": 1}}}}
+    }
+    assert add_field_coverage(
+        {"items": {"properties": {"test": {}}}}, [{"test": "not empty"}, {}, {}]
+    ) == {
+        "items": {"properties": {"test": {"coverage": {"successes": 1, "checks": 3}}}}
+    }
+
+    assert add_field_coverage(
+        {
+            "items": {
+                "properties": {
+                    "parent": {"items": {"properties": {"child1": {}, "child2": {}}}}
+                }
+            }
+        },
+        [{}, {"parent": []}, {"parent": [{}]}, {"parent": [{"child1": "not empty"}]}],
+    ) == {
+        "items": {
+            "properties": {
+                "parent": {
+                    "coverage": {
+                        "successes": 2,
+                        "checks": 4,
+                    },
+                    "items": {
+                        "properties": {
+                            "child1": {"coverage": {"successes": 1, "checks": 2}},
+                            "child2": {"coverage": {"checks": 2}},
+                        }
+                    },
+                }
+            }
+        }
+    }
+
+
+def test_add_field_coverage_percentages():
+    assert add_field_coverage_percentages({}) == {}
+    assert add_field_coverage_percentages({"properties": {}}) == {"properties": {}}
+    assert add_field_coverage_percentages({"properties": {"test": {}}}) == {
+        "properties": {
+            "test": {"coverage": {"successes": 0, "checks": 0, "percentage": 0}}
+        }
+    }
+    assert add_field_coverage_percentages(
+        {"properties": {"test": {"coverage": {"checks": 3}}}}
+    ) == {
+        "properties": {
+            "test": {"coverage": {"successes": 0, "checks": 3, "percentage": 0}}
+        }
+    }
+    assert add_field_coverage_percentages(
+        {"properties": {"test": {"coverage": {"successes": 1, "checks": 3}}}}
+    ) == {
+        "properties": {
+            "test": {"coverage": {"successes": 1, "checks": 3, "percentage": 33}}
+        }
+    }
+
+    assert add_field_coverage_percentages({"properties": {"test": {}}}) == {
+        "properties": {
+            "test": {"coverage": {"successes": 0, "checks": 0, "percentage": 0}}
+        }
+    }
+    assert add_field_coverage_percentages(
+        {"properties": {"test": {"coverage": {"checks": 3}}}}
+    ) == {
+        "properties": {
+            "test": {"coverage": {"successes": 0, "checks": 3, "percentage": 0}}
+        }
+    }
+    assert add_field_coverage_percentages(
+        {"properties": {"test": {"coverage": {"successes": 1, "checks": 3}}}}
+    ) == {
+        "properties": {
+            "test": {"coverage": {"successes": 1, "checks": 3, "percentage": 33}}
+        }
+    }
+
+    assert add_field_coverage_percentages(
+        {"items": {"properties": {"test": {"coverage": {"successes": 1, "checks": 3}}}}}
+    ) == {
+        "items": {
+            "properties": {
+                "test": {"coverage": {"successes": 1, "checks": 3, "percentage": 33}}
+            }
+        }
+    }
+
+
+def schema_obj_from_str(schema_str):
+    schema_obj = SchemaJsonMixin()
+    schema_obj.schema_host = ""
+    schema_obj.schema_str = schema_str
+    return schema_obj
+
+
+def test_get_field_coverage():
+    assert get_field_coverage(schema_obj_from_str("{}"), []) == {}
+    assert get_field_coverage(schema_obj_from_str("{}"), [{}]) == {}
+    assert (
+        get_field_coverage(
+            schema_obj_from_str(
+                """{
+                    "properties": {
+                        "test": {}
+                    }
+                }"""
+            ),
+            [{}],
+        )
+        == {
+            "properties": {
+                "test": {"coverage": {"checks": 1, "successes": 0, "percentage": 0}}
+            }
+        }
+    )
+
+    # Test that refs to the same object are counted separately
+    assert get_field_coverage(
+        schema_obj_from_str(
+            """{
+                    "properties": {
+                        "test1": {"$ref": "#/definitions/Test"},
+                        "test2": {"$ref": "#/definitions/Test"}
+                    },
+                    "definitions": {
+                        "Test": {
+                            "properties": {"child": {}}
+                        }
+                    }
+            }"""
+        ),
+        [{}, {"test1": {"child": "not empty"}}, {"test1": {}}],
+    )["properties"] == {
+        "test1": {
+            "properties": {
+                "child": {"coverage": {"checks": 2, "successes": 1, "percentage": 50}}
+            },
+            "coverage": {
+                "checks": 3,
+                "successes": 1,
+                "percentage": 33,
+            },
+        },
+        "test2": {
+            "properties": {
+                "child": {"coverage": {"checks": 0, "successes": 0, "percentage": 0}}
+            },
+            "coverage": {
+                "checks": 3,
+                "successes": 0,
+                "percentage": 0,
+            },
+        },
+    }
+
+
+def common_fixtures(filename):
+    return os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "fixtures", "common", filename
+    )
+
+
+def test_get_field_coverage_oc4ids():
+    # Compare the actual json output, to ensure order is the same
+    assert (
+        json.dumps(
+            get_field_coverage(
+                schema_obj_from_str(
+                    open(common_fixtures("oc4ids_project-schema_0__9__2.json")).read()
+                ),
+                json.load(open(common_fixtures("oc4ids_example.json")))["projects"],
+            ),
+            indent=2,
+        )
+        == open(common_fixtures("oc4ids_example_coverage.json")).read()
+    )

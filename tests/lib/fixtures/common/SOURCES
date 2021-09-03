@@ -1,0 +1,14 @@
+oc4ids_project-schema_0__9__2.json
+https://standard.open-contracting.org/infrastructure/schema/0__9__2/project-schema.json
+License: Apache v2
+https://github.com/open-contracting/infrastructure/blob/2f43f08925a3caaedb452ba37c6908039a834bf4/LICENSE
+
+oc4ids_example.json
+Combination of blank.json and example.json from https://github.com/open-contracting/infrastructure/tree/0.9-dev/docs/examples
+License: Apache v2
+https://github.com/open-contracting/infrastructure/blob/2f43f08925a3caaedb452ba37c6908039a834bf4/LICENSE
+
+oc4ids_example_coverage.json
+Copy of https://standard.open-contracting.org/infrastructure/schema/0__9__2/project-schema.json with coverage information added.
+License: Apache v2
+https://github.com/open-contracting/infrastructure/blob/2f43f08925a3caaedb452ba37c6908039a834bf4/LICENSE

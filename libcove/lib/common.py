@@ -1,23 +1,23 @@
 import collections
+import copy
 import csv
 import datetime
-import fcntl
 import functools
 import json
+import logging
 import os
 import re
 from collections import OrderedDict
+from tempfile import NamedTemporaryFile
 from urllib.parse import urljoin, urlparse
 
 import jsonref
 import jsonschema.validators
 import requests
 from cached_property import cached_property
-from django.utils.html import conditional_escape, escape, format_html
 from flattentool import unflatten
-from flattentool.schema import get_property_type_set
 from jsonschema import FormatChecker, RefResolver
-from jsonschema._utils import uniq
+from jsonschema._utils import extras_msg, find_additional_properties, uniq
 from jsonschema.compat import urlopen, urlsplit
 from jsonschema.exceptions import ValidationError
 
@@ -43,38 +43,33 @@ validation_error_template_lookup = {
     "object": "{}'{}' is not a JSON object",
     "array": "{}'{}' is not a JSON array",
 }
-# These are "safe" html that we trust
-# Don't insert any values into these strings without ensuring escaping
-# e.g. using django's format_html function.
-validation_error_template_lookup_safe = {
-    "date-time": "Date is not in the correct format",
-    "uri": "Invalid 'uri' found",
-    "string": "{}<code>{}</code> is not a string. Check that the value {} has quotes at the start and end. Escape any quotes in the value with <code>\</code>",
-    "integer": "{}<code>{}</code> is not a integer. Check that the value {} doesn’t contain decimal points or any characters other than 0-9. Integer values should not be in quotes. ",
-    "number": "{}<code>{}</code> is not a number. Check that the value {} doesn’t contain any characters other than 0-9 and dot (<code>.</code>). Number values should not be in quotes. ",
-    "object": "{}<code>{}</code> is not a JSON object",
-    "array": "{}<code>{}</code> is not a JSON array",
-}
+
+logger = logging.getLogger(__name__)
 
 
-def unique_ids(validator, ui, instance, schema, id_name="id"):
+# Note there are also OCDS specific overrides at the top of
+# https://github.com/open-contracting/lib-cove-ocds/blob/master/libcoveocds/common_checks.py
+
+
+def unique_ids(validator, ui, instance, schema, id_names=["id"]):
     if ui and validator.is_type(instance, "array"):
         non_unique_ids = set()
         all_ids = set()
         for item in instance:
             try:
-                item_id = item.get(id_name)
+                item_ids = tuple(item.get(id_name) for id_name in id_names)
             except AttributeError:
                 # if item is not a dict
-                item_id = None
-            if (
-                item_id
+                item_ids = None
+            if item_ids and all(
+                item_id is not None
                 and not isinstance(item_id, list)
                 and not isinstance(item_id, dict)
+                for item_id in item_ids
             ):
-                if item_id in all_ids:
-                    non_unique_ids.add(item_id)
-                all_ids.add(item_id)
+                if item_ids in all_ids:
+                    non_unique_ids.add(item_ids)
+                all_ids.add(item_ids)
             else:
                 if not uniq(instance):
                     msg = "Array has non-unique elements"
@@ -84,9 +79,12 @@ def unique_ids(validator, ui, instance, schema, id_name="id"):
                     return
 
         for non_unique_id in sorted(non_unique_ids):
-            msg = "Non-unique {} values".format(id_name)
-            err = ValidationError(msg, instance=non_unique_id)
-            err.error_id = "uniqueItems_with_{}".format(id_name)
+            if len(id_names) == 1:
+                msg = "Non-unique {} values".format(id_names[0])
+            else:
+                msg = "Non-unique combination of {} values".format(", ".join(id_names))
+            err = ValidationError(msg, instance=", ".join(non_unique_id))
+            err.error_id = "uniqueItems_with_{}".format("__".join(id_names))
             yield err
 
 
@@ -164,10 +162,117 @@ def oneOf_draft4(validator, oneOf, instance, schema):
         yield ValidationError("%r is valid under each of %s" % (instance, reprs))
 
 
+def additionalItems_extra_data(validator, aI, instance, schema):
+    """
+    A copy of https://github.com/Julian/jsonschema/blob/9814afc7659d68150f889a4820991210ba26555f/jsonschema/_validators.py#L85
+    which has been modified to return more information on the ValidationError
+    object, to allow us to replace the message with a translation in
+    lib-cove-web.
+
+    """
+    if not validator.is_type(instance, "array") or validator.is_type(
+        schema.get("items", {}), "object"
+    ):
+        return
+
+    len_items = len(schema.get("items", []))
+    if validator.is_type(aI, "object"):
+        for index, item in enumerate(instance[len_items:], start=len_items):
+            for error in validator.descend(item, aI, path=index):
+                yield error
+    elif not aI and len(instance) > len(schema.get("items", [])):
+        extras = instance[len(schema.get("items", [])) :]
+        error = "Additional items are not allowed (%s %s unexpected)"
+        error_exception = ValidationError(error % extras_msg(extras))
+        error_exception.extras = instance[len(schema.get("items", [])) :]
+        yield error_exception
+
+
+def additionalProperties_extra_data(validator, aP, instance, schema):
+    """
+    A copy of https://github.com/Julian/jsonschema/blob/9814afc7659d68150f889a4820991210ba26555f/jsonschema/_validators.py#L41
+    which has been modified to return more information on the ValidationError
+    object, to allow us to replace the message with a translation in
+    lib-cove-web.
+    """
+    if not validator.is_type(instance, "object"):
+        return
+
+    extras = set(find_additional_properties(instance, schema))
+
+    if validator.is_type(aP, "object"):
+        for extra in extras:
+            for error in validator.descend(instance[extra], aP, path=extra):
+                yield error
+    elif not aP and extras:
+        if "patternProperties" in schema:
+            patterns = sorted(schema["patternProperties"])
+            if len(extras) == 1:
+                verb = "does"
+            else:
+                verb = "do"
+            reprs = (
+                ", ".join(map(repr, sorted(extras))),
+                ", ".join(map(repr, patterns)),
+            )
+            error = "%s %s not match any of the regexes: %s" % (
+                reprs[0],
+                verb,
+                reprs[1],
+            )
+            error_exception = ValidationError(error)
+            error_exception.error_id = "additionalProperties_does_not_match_regexes"
+            error_exception.reprs = reprs
+            # cast to list because this gets json serialized
+            error_exception.extras = list(extras)
+            yield error_exception
+        else:
+            error = "Additional properties are not allowed (%s %s unexpected)"
+            error_exception = ValidationError(error % extras_msg(extras))
+            error_exception.error_id = "additionalProperties_not_allowed"
+            # cast to list because this gets json serialized
+            error_exception.extras = list(extras)
+            yield error_exception
+
+
+def dependencies_extra_data(validator, dependencies, instance, schema):
+    """
+    A copy of https://github.com/Julian/jsonschema/blob/9814afc7659d68150f889a4820991210ba26555f/jsonschema/_validators.py#L236
+    which has been modified to return more information on the ValidationError
+    object, to allow us to replace the message with a translation in
+    lib-cove-web.
+    """
+    if not validator.is_type(instance, "object"):
+        return
+
+    for property, dependency in dependencies.items():
+        if property not in instance:
+            continue
+
+        if validator.is_type(dependency, "array"):
+            for each in dependency:
+                if each not in instance:
+                    message = "%r is a dependency of %r"
+                    error_exception = ValidationError(message % (each, property))
+                    error_exception.each = each
+                    error_exception.property = property
+                    yield error_exception
+        else:
+            for error in validator.descend(
+                instance,
+                dependency,
+                schema_path=property,
+            ):
+                yield error
+
+
 validator.VALIDATORS.pop("patternProperties")
 validator.VALIDATORS["uniqueItems"] = unique_ids
 validator.VALIDATORS["required"] = required_draft4
 validator.VALIDATORS["oneOf"] = oneOf_draft4
+validator.VALIDATORS["dependencies"] = dependencies_extra_data
+validator.VALIDATORS["additionalItems"] = additionalItems_extra_data
+validator.VALIDATORS["additionalProperties"] = additionalProperties_extra_data
 
 
 # Properties this class might look for
@@ -238,15 +343,13 @@ def schema_dict_fields_generator(schema_dict):
             for property_schema_dict in property_schema_dicts:
                 if not isinstance(property_schema_dict, dict):
                     continue
-                property_type_set = get_property_type_set(property_schema_dict)
-                if "object" in property_type_set:
+                if "properties" in property_schema_dict:
                     for field in schema_dict_fields_generator(property_schema_dict):
                         yield "/" + property_name + field
-                elif "array" in property_type_set:
-                    fields = schema_dict_fields_generator(
-                        property_schema_dict.get("items", {})
-                    )
-                    for field in fields:
+                elif "items" in property_schema_dict:
+                    for field in schema_dict_fields_generator(
+                        property_schema_dict["items"]
+                    ):
                         yield "/" + property_name + field
                 yield "/" + property_name
     if "items" in schema_dict and isinstance(schema_dict["items"], dict):
@@ -286,7 +389,11 @@ def get_schema_codelist_paths(
 
         if value.get("type") == "object":
             get_schema_codelist_paths(None, value, path, codelist_paths)
-        elif value.get("type") == "array" and value.get("items", {}).get("properties"):
+        elif (
+            value.get("type") == "array"
+            and isinstance(value.get("items"), dict)
+            and value.get("items").get("properties")
+        ):
             get_schema_codelist_paths(None, value["items"], path, codelist_paths)
 
     return codelist_paths
@@ -627,7 +734,7 @@ def get_schema_validation_errors(
         resolver = CustomRefResolver(
             "",
             pkg_schema_obj,
-            config=schema_obj.config,
+            config=getattr(schema_obj, "config", None),
             schema_url=schema_obj.schema_host,
             schema_file=schema_obj.extended_schema_file,
             file_schema_name=schema_obj.schema_name,
@@ -636,7 +743,7 @@ def get_schema_validation_errors(
         resolver = CustomRefResolver(
             "",
             pkg_schema_obj,
-            config=schema_obj.config,
+            config=getattr(schema_obj, "config", None),
             schema_url=schema_obj.schema_host,
         )
 
@@ -644,7 +751,6 @@ def get_schema_validation_errors(
         pkg_schema_obj, format_checker=format_checker, resolver=resolver
     )
     for e in our_validator.iter_errors(json_data):
-        message_safe = None
         message = e.message
         path = "/".join(str(item) for item in e.path)
         path_no_number = "/".join(
@@ -670,6 +776,9 @@ def get_schema_validation_errors(
 
         header_extra = None
         pre_header = ""
+        # Mostly we don't want this, but in a couple of specific cases we'll
+        # set it
+        instance = None
 
         if not header and len(e.path):
             header = e.path[-1]
@@ -692,24 +801,13 @@ def get_schema_validation_errors(
             message_template = validation_error_template_lookup.get(
                 validator_type, message
             )
-            message_safe_template = validation_error_template_lookup_safe.get(
-                validator_type
-            )
 
             if message_template:
                 message = message_template.format(pre_header, header, null_clause)
 
-            if message_safe_template:
-                message_safe = format_html(
-                    message_safe_template, pre_header, header, null_clause
-                )
-
         if e.validator == "oneOf" and e.validator_value[0] == {"format": "date-time"}:
             # Give a nice date related error message for 360Giving date `oneOf`s.
             message = validation_error_template_lookup["date-time"]
-            message_safe = format_html(
-                validation_error_template_lookup_safe["date-time"]
-            )
             validator_type = "date-time"
 
         if not isinstance(e.instance, (dict, list)):
@@ -733,44 +831,34 @@ def get_schema_validation_errors(
                 message = "'{}' is missing but required within '{}'".format(
                     field_name, parent_name
                 )
-                message_safe = format_html(
-                    "<code>{}</code> is missing but required within <code>{}</code>",
-                    field_name,
-                    parent_name,
-                )
             else:
                 message = "'{}' is missing but required".format(field_name)
-                message_safe = format_html(
-                    "<code>{}</code> is missing but required", field_name, parent_name
-                )
 
         if e.validator == "enum":
             if "isCodelist" in e.schema:
                 continue
             message = "Invalid code found in '{}'".format(header)
-            message_safe = format_html("Invalid code found in <code>{}</code>", header)
 
-        if e.validator == "pattern":
-            message_safe = format_html(
-                "<code>{}</code> does not match the regex <code>{}</code>",
-                header,
-                e.validator_value,
-            )
+        if e.validator in [
+            "minItems",
+            "minLength",
+            "maxItems",
+            "maxLength",
+            "minProperties",
+            "maxProperties",
+            "minimum",
+            "maximum",
+            "anyOf",
+            "multipleOf",
+            "not",
+        ]:
+            instance = e.instance
 
-        if e.validator == "minItems" and e.validator_value == 1:
-            message_safe = format_html(
-                "<code>{}</code> is too short. You must supply at least one value, or remove the item entirely (unless it’s required).",
-                e.instance,
-            )
+        if e.validator == "format" and validator_type not in ["date-time", "uri"]:
+            instance = e.instance
 
-        if e.validator == "minLength" and e.validator_value == 1:
-            message_safe = format_html(
-                '<code>"{}"</code> is too short. Strings must be at least one character. This error typically indicates a missing value.',
-                e.instance,
-            )
-
-        if message_safe is None:
-            message_safe = escape(message)
+        if getattr(e, "error_id", None) in ["oneOf_any", "oneOf_each"]:
+            instance = e.instance
 
         if header_extra is None:
             header_extra = header
@@ -778,7 +866,6 @@ def get_schema_validation_errors(
         unique_validator_key = OrderedDict(
             [
                 ("message", message),
-                ("message_safe", conditional_escape(message_safe)),
                 ("validator", e.validator),
                 ("assumption", e.assumption if hasattr(e, "assumption") else None),
                 # Don't pass this value for 'enum' and 'required' validators,
@@ -796,9 +883,19 @@ def get_schema_validation_errors(
                 ("header_extra", header_extra),
                 ("null_clause", null_clause),
                 ("error_id", e.error_id if hasattr(e, "error_id") else None),
+                ("exclusiveMinimum", e.schema.get("exclusiveMinimum")),
+                ("exclusiveMaximum", e.schema.get("exclusiveMaximum")),
+                ("extras", getattr(e, "extras", None)),
+                ("each", getattr(e, "each", None)),
+                ("property", getattr(e, "property", None)),
+                ("reprs", getattr(e, "reprs", None)),
             ]
         )
-        validation_errors[json.dumps(unique_validator_key)].append(value)
+        if instance is not None:
+            unique_validator_key["instance"] = instance
+        validation_errors[
+            json.dumps(unique_validator_key, default=decimal_default)
+        ].append(value)
     return dict(validation_errors)
 
 
@@ -1072,7 +1169,11 @@ def _get_schema_deprecated_paths(
 
         if value.get("type") == "object":
             _get_schema_deprecated_paths(None, value, path, deprecated_paths)
-        elif value.get("type") == "array" and value.get("items", {}).get("properties"):
+        elif (
+            value.get("type") == "array"
+            and isinstance(value.get("items"), dict)
+            and value.get("items").get("properties")
+        ):
             _get_schema_deprecated_paths(None, value["items"], path, deprecated_paths)
 
     return deprecated_paths
@@ -1113,7 +1214,11 @@ def _get_schema_non_required_ids(
 
         if value.get("type") == "object":
             _get_schema_non_required_ids(None, value, path, id_paths)
-        elif value.get("type") == "array" and value.get("items", {}).get("properties"):
+        elif (
+            value.get("type") == "array"
+            and isinstance(value.get("items"), dict)
+            and value.get("items").get("properties")
+        ):
             has_list_merge = "wholeListMerge" in value and value.get("wholeListMerge")
             _get_schema_non_required_ids(
                 None,
@@ -1146,6 +1251,14 @@ def add_is_codelist(obj):
     release.tag in core schema at the moment."""
 
     for prop, value in obj.get("properties", {}).items():
+        if not isinstance(value, dict):
+            logger.warning(
+                "A 'properties' object contains a {!r} value that is not a JSON Schema: {!r}".format(
+                    prop, value
+                )
+            )
+            continue
+
         if "codelist" in value:
             if "array" in value.get("type", ""):
                 value["items"]["isCodelist"] = True
@@ -1154,7 +1267,11 @@ def add_is_codelist(obj):
 
         if value.get("type") == "object":
             add_is_codelist(value)
-        elif value.get("type") == "array" and value.get("items", {}).get("properties"):
+        elif (
+            value.get("type") == "array"
+            and isinstance(value.get("items"), dict)
+            and value.get("items").get("properties")
+        ):
             add_is_codelist(value["items"])
 
     for value in obj.get("definitions", {}).values():
@@ -1187,51 +1304,154 @@ def get_spreadsheet_meta_data(
     return metatab_json
 
 
+def org_id_file_fresh(org_id_file_contents, check_date):
+    """Unless the file was downloaded on greater than or equal to 'check_date' it is considered stale."""
+    org_id_file_date_downloaded_date = datetime.datetime.strptime(
+        org_id_file_contents.get("downloaded", "2000-1-1"), "%Y-%m-%d"
+    ).date()
+    return org_id_file_date_downloaded_date >= check_date
+
+
 def get_orgids_prefixes(orgids_url=None):
-    """Get org-ids.json file from file system (or fetch upstream if it doesn't exist)
-
-    A lock file is needed to avoid different processes trying to access the file
-    trampling each other. If a process has the exclusive lock, a different process
-    will wait until it is released.
-    """
-    local_org_ids_dir = os.path.dirname(os.path.realpath(__file__))
-    local_org_ids_file = os.path.join(local_org_ids_dir, "org-ids.json")
-    lock_file = os.path.join(local_org_ids_dir, "org-ids.json.lock")
+    """Get org-ids.json file from file system (or fetch remotely if it doesn't exist)"""
+    local_org_ids_file = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "org-ids.json"
+    )
     today = datetime.date.today()
-    get_remote_file = False
-    first_request = False
-
-    if not orgids_url:
+    if orgids_url is None:
         orgids_url = "http://org-id.guide/download.json"
+    org_id_file_contents = None
 
-    if os.path.exists(local_org_ids_file):
-        with open(lock_file, "w") as lock:
-            fcntl.flock(lock, fcntl.LOCK_EX)
-            fp = open(local_org_ids_file)
-            org_ids = json.load(fp)
-            fp.close()
-            fcntl.flock(lock, fcntl.LOCK_UN)
-        date_str = org_ids.get("downloaded", "2000-1-1")
-        date_downloaded = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
-        if date_downloaded != today:
-            get_remote_file = True
-    else:
-        get_remote_file = True
-        first_request = True
+    # Try to grab the data from the local filesystem
+    try:
+        with open(local_org_ids_file) as fp:
+            org_id_file_contents = json.load(fp)
+    except FileNotFoundError:
+        pass
 
-    if get_remote_file:
+    if org_id_file_contents is None or not org_id_file_fresh(
+        org_id_file_contents, today
+    ):
+        # Refresh the file
         try:
-            org_ids = requests.get(orgids_url).json()
-            org_ids["downloaded"] = "%s" % today
-            with open(lock_file, "w") as lock:
-                fcntl.flock(lock, fcntl.LOCK_EX)
-                fp = open(local_org_ids_file, "w")
-                json.dump(org_ids, fp, indent=2)
-                fp.close()
-                fcntl.flock(lock, fcntl.LOCK_UN)
-        except requests.exceptions.RequestException:
-            if first_request:
-                raise  # First time ever request fails
-            pass  # Update fails
+            org_id_file_contents = requests.get(orgids_url).json()
+        except requests.exceptions.RequestException as e:
+            # We have tried locally and remotely with no luck. We have to raise.
+            raise e
 
-    return [org_list["code"] for org_list in org_ids["lists"]]
+        org_id_file_contents["downloaded"] = "%s" % today
+        # Use a tempfile and move to create new file here for atomicity
+        with NamedTemporaryFile(mode="w", delete=False) as tmp:
+            json.dump(org_id_file_contents, tmp, indent=2)
+        os.rename(tmp.name, local_org_ids_file)
+    # Return either the original file data, if it was found to be fresh, or the new data, if we were able to retrieve it.
+    return [org_list["code"] for org_list in org_id_file_contents["lists"]]
+
+
+def add_field_coverage(schema_dict, json_data):
+    """
+    Takes a schema dict and adds non-zero coverage counts of successes and
+    checks, based on what is in the json data.
+
+    Doesn't support all possible json schemas e.g. anyOf, allOf, oneOf and an
+    array as the value for items are not supported, and will be ignored, along
+    with all their children.
+
+    """
+    if not isinstance(schema_dict, dict):
+        return schema_dict
+
+    schema_properties = schema_dict.get("properties")
+    if isinstance(schema_properties, dict) and isinstance(json_data, dict):
+        for schema_property, sub_schema_obj in schema_properties.items():
+            if "coverage" not in sub_schema_obj:
+                sub_schema_obj["coverage"] = {}
+            sub_schema_obj["coverage"]["checks"] = (
+                sub_schema_obj.get("coverage", {}).get("checks", 0) + 1
+            )
+            if json_data.get(schema_property):
+                sub_schema_obj["coverage"]["successes"] = (
+                    sub_schema_obj.get("coverage", {}).get("successes", 0) + 1
+                )
+            add_field_coverage(sub_schema_obj, json_data.get(schema_property))
+
+    schema_items = schema_dict.get("items")
+    if isinstance(schema_items, dict) and isinstance(json_data, list):
+        for json_data_item in json_data:
+            add_field_coverage(schema_items, json_data_item)
+    return schema_dict
+
+
+def add_field_coverage_percentages(schema_dict):
+    """
+    Takes the output of add_field_coverage and adds percentages, and also zero
+    counts of successes and checks.
+
+    """
+    if not isinstance(schema_dict, dict):
+        return schema_dict
+
+    schema_properties = schema_dict.get("properties")
+    if isinstance(schema_properties, dict):
+        for schema_property, sub_schema_obj in schema_properties.items():
+            if "coverage" not in sub_schema_obj:
+                sub_schema_obj["coverage"] = {}
+            if "checks" not in sub_schema_obj["coverage"]:
+                sub_schema_obj["coverage"]["checks"] = 0
+            if "successes" not in sub_schema_obj["coverage"]:
+                sub_schema_obj["coverage"]["successes"] = 0
+            if (
+                sub_schema_obj["coverage"]["checks"] == 0
+                and sub_schema_obj["coverage"]["successes"] == 0
+            ):
+                sub_schema_obj["coverage"]["percentage"] = 0
+            else:
+                sub_schema_obj["coverage"]["percentage"] = int(
+                    sub_schema_obj["coverage"]["successes"]
+                    / sub_schema_obj["coverage"]["checks"]
+                    * 100
+                )
+            add_field_coverage_percentages(sub_schema_obj)
+
+    add_field_coverage_percentages(schema_dict.get("items"))
+    return schema_dict
+
+
+def dict_copy(dict_in):
+    """
+    Make a copy of a dict, and any other dicts nested inside it.
+
+    We use this instead of copy.deepcopy because that keeps a memo, and creates
+    only one new object for objects that are the same.
+
+    This doesn't deal with the use of other objects for nesting, e.g. lists,
+    because the code using the resulting structure only descends into dicts.
+
+    """
+    dict_out = copy.copy(dict_in)
+    for key, value in dict_out.items():
+        if isinstance(value, dict):
+            dict_out[key] = dict_copy(value)
+    return dict_out
+
+
+def get_field_coverage(schema_obj, json_data_list):
+    """
+    Returns a copy of the schema with coverage counts of successes, checks and
+    percentages annoated.
+
+    json_data_list is the main list of objects in the json data, as we use the
+    main schema, not the package schema.
+    e.g. for OC4IDS we call this function with:
+    get_field_coverage(schema_obj, json_data.get("projects")
+
+    """
+    # Need to call dict_copy here because jsonref returns the same dict when
+    # there's mutliple refs to the same place.
+    schema_dict = dict_copy(schema_obj.get_schema_obj(deref=True))
+    if not isinstance(json_data_list, list):
+        return {}
+    for json_data_item in json_data_list:
+        add_field_coverage(schema_dict, json_data_item)
+    add_field_coverage_percentages(schema_dict)
+    return schema_dict
