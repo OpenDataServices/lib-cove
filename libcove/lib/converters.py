@@ -5,10 +5,9 @@ import shutil
 import warnings
 
 import flattentool
-from django.utils.translation import ugettext_lazy as _
 from flattentool.json_input import BadlyFormedJSONError
 
-from .exceptions import CoveInputDataError, cove_spreadsheet_conversion_error
+from .exceptions import cove_spreadsheet_conversion_error
 
 logger = logging.getLogger(__name__)
 
@@ -241,18 +240,7 @@ def convert_json(
             )
 
     except BadlyFormedJSONError as err:
-        raise CoveInputDataError(
-            context={
-                "sub_title": _("Sorry, we can't process that data"),
-                "link": "index",
-                "link_text": _("Try Again"),
-                "msg": _(
-                    "We think you tried to upload a JSON file, but it is not well formed JSON.\n\nError message: {}".format(
-                        err
-                    )
-                ),
-            }
-        )
+        raise err
     except Exception as err:
         logger.exception(err, extra={"request": request})
         return {"conversion": "flatten", "conversion_error": repr(err)}
