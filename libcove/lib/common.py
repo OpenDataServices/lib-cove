@@ -5,11 +5,13 @@ import datetime
 import functools
 import json
 import logging
+import numbers
 import os
 import re
 from collections import OrderedDict
 from tempfile import NamedTemporaryFile
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, urlsplit
+from urllib.request import urlopen
 
 import jsonref
 import jsonschema.validators
@@ -18,16 +20,41 @@ from cached_property import cached_property
 from flattentool import unflatten
 from jsonschema import FormatChecker, RefResolver
 from jsonschema._utils import extras_msg, find_additional_properties, uniq
-from jsonschema.compat import urlopen, urlsplit
-from jsonschema.exceptions import ValidationError
+from jsonschema.exceptions import UndefinedTypeCheck, ValidationError
 
 from .exceptions import cove_spreadsheet_conversion_error
 from .tools import decimal_default, get_request
 
+
+class TypeChecker:
+    def is_type(self, instance, type):
+        if type == "string":
+            return isinstance(instance, str)
+        if type == "array":
+            return isinstance(instance, list)
+        if type == "object":
+            return isinstance(instance, dict)
+        if type == "integer":
+            if isinstance(instance, bool):
+                return False
+            return isinstance(instance, int)
+        if type == "number":
+            if isinstance(instance, bool):
+                return False
+            return isinstance(instance, numbers.Number)
+        if type == "boolean":
+            return isinstance(instance, bool)
+        if type == "null":
+            return instance is None
+        raise UndefinedTypeCheck(type)
+
+
 # Because we will be changing items on this validator, it's important we take a copy!
 # Otherwise we could cause conflicts with other software in the same process.
 validator = jsonschema.validators.extend(
-    jsonschema.validators.Draft4Validator, validators={}
+    jsonschema.validators.Draft4Validator,
+    validators={},
+    type_checker=TypeChecker(),
 )
 
 uniqueItemsValidator = validator.VALIDATORS.pop("uniqueItems")
