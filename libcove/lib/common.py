@@ -430,10 +430,10 @@ def get_schema_codelist_paths(
         if "codelist" in value and path not in codelist_paths:
             codelist_paths[path] = (value["codelist"], value.get("openCodelist", False))
 
-        if value.get("type") == "object":
+        if value.get("type") == ["object"]:
             get_schema_codelist_paths(None, value, path, codelist_paths)
         elif (
-            value.get("type") == "array"
+            value.get("type") == ["array"]
             and isinstance(value.get("items"), dict)
             and value.get("items").get("properties")
         ):
@@ -1250,10 +1250,10 @@ def _get_schema_non_required_ids(
         if prop == "id" and no_required_id and array_parent and not list_merge:
             id_paths.append(path)
 
-        if value.get("type") == "object":
+        if value.get("type") == ["object"]:
             _get_schema_non_required_ids(None, value, path, id_paths)
         elif (
-            value.get("type") == "array"
+            value.get("type") == ["array"]
             and isinstance(value.get("items"), dict)
             and value.get("items").get("properties")
         ):
@@ -1303,10 +1303,10 @@ def add_is_codelist(obj):
             else:
                 value["isCodelist"] = True
 
-        if value.get("type") == "object":
+        if value.get("type") == ["object"]:
             add_is_codelist(value)
         elif (
-            value.get("type") == "array"
+            value.get("type") == ["array"]
             and isinstance(value.get("items"), dict)
             and value.get("items").get("properties")
         ):
