@@ -25,6 +25,9 @@ jobs:
       if: matrix.cove == 'ocds'
       run: |
         git clone https://github.com/open-contracting/cove-ocds.git
+        cd cove-ocds
+        git checkout generic-paths-tests
+        cd ..
         git clone https://github.com/open-contracting/lib-cove-ocds.git
 
     - name: bods
