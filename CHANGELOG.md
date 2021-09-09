@@ -7,6 +7,86 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.25.0] - 2021-08-18
+
+## Added
+
+- Add a function to calculate field coverage https://github.com/open-contracting/cove-oc4ids/issues/98
+
+## [0.24.0] - 2021-05-20
+
+## Changed
+
+- Update `unique_ids` override to support multiple ids. If you called `unique_ids` with `id_name="some_id"`, you now need to call `id_names=["some_id"]`. See this lib-cove-ocds PR as an example: https://github.com/open-contracting/lib-cove-ocds/pull/91/files
+
+### Fixed
+
+- Don't error on some decimals https://github.com/open-contracting/cove-ocds/issues/158
+
+## [0.23.0] - 2021-05-12
+
+### Removed
+
+- Drop Python 3.5 support https://github.com/OpenDataServices/lib-cove/pull/81
+
+## CHanged
+
+- Remove unused dependencies from setup.py https://github.com/OpenDataServices/lib-cove/pull/80
+
+## [0.22.1] - 2021-04-08
+
+### Fixed
+
+- Fix a typo of a variable name, that meant `date-time` and `uri` validation messages were incorrectly grouped
+
+## [0.22.0] - 2021-02-25
+
+### Changed
+
+- `get_schema_validation_errors` and therefore `common_checks_context` return more fields on each error dictionary, so that we can [replace the message with a translation in lib-cove-web](https://github.com/open-contracting/cove-ocds/issues/144)
+
+### Fixed
+
+- Don't error when the value for the `items` key in a JSON Schema is not a dict
+
+## [0.21.0] - 2021-02-17
+
+### Changed
+
+- Remove dependency on fcntl, improve Windows support https://github.com/OpenDataServices/lib-cove/pull/74
+
+## [0.20.3] - 2021-01-20
+
+### Fixed
+
+- JSON Schema is not guaranteed to set `type`, so look for `properties` or `items` instead (in `schema_dict_fields_generator`)
+
+### Fixed
+
+## [0.20.2] - 2020-11-04
+
+### Fixed
+
+- Don't error when JSON schema "properties" values aren't JSON Schema, and log a warning instead https://github.com/OpenDataServices/lib-cove/pull/71
+
+## [0.20.1] - 2020-10-27
+
+### Fixed
+
+- Fixes for translation work in 0.20.0 to work with [360Giving and IATI CoVEs](https://github.com/OpenDataServices/cove/)
+
+## [0.20.0] - 2020-10-19
+
+### Changed
+
+- Move all strings that show in the web frontend from here to lib-cove-web. This includes HTML validation messages. https://github.com/OpenDataServices/lib-cove/pull/68
+
+## [0.19.1] - 2020-10-08
+
+### Fixed
+
+- Don't require a config to be set on schema objects
+
 ## [0.19.0] - 2020-09-28
 
 ### Changed
