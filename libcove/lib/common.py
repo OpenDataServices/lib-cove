@@ -389,13 +389,13 @@ def schema_dict_fields_generator(schema_dict):
                     continue
                 if "properties" in property_schema_dict:
                     for field in schema_dict_fields_generator(property_schema_dict):
-                        yield "/" + property_name + field
+                        yield f"/{property_name}{field}"
                 elif "items" in property_schema_dict:
                     for field in schema_dict_fields_generator(
                         property_schema_dict["items"]
                     ):
-                        yield "/" + property_name + field
-                yield "/" + property_name
+                        yield f"/{property_name}{field}"
+                yield f"/{property_name}"
     if "items" in schema_dict and isinstance(schema_dict["items"], dict):
         if "oneOf" in schema_dict["items"] and isinstance(
             schema_dict["items"]["oneOf"], list
@@ -668,8 +668,8 @@ def get_additional_codelist_values(schema_obj, json_data):
                     if schema_obj.extended_codelist_urls.get(codelist):
                         codelist_url = schema_obj.extended_codelist_urls[codelist][-1]
 
-                    codelistadd = "+" + codelist
-                    codelistsub = "-" + codelist
+                    codelistadd = f"+{codelist}"
+                    codelistsub = f"-{codelist}"
                     for codelist_key in schema_obj.extended_codelist_urls.keys():
                         if codelist_key == codelistadd:
                             for amended_codelist in schema_obj.extended_codelist_urls[
@@ -863,7 +863,7 @@ def get_schema_validation_errors(
                 else:
                     parent_name = e.path[-1]
 
-            heading = heading_src_map.get(path_no_number + "/" + e.message)
+            heading = heading_src_map.get(f"{path_no_number}/{e.message}")
             if heading:
                 field_name = heading[0][1]
                 value["header"] = heading[0][1]
@@ -1132,7 +1132,7 @@ class CustomRefResolver(RefResolver):
 
             if scheme in self.handlers:
                 result = self.handlers[scheme](uri)
-            elif scheme in [u"http", u"https"]:
+            elif scheme in ["http", "https"]:
                 # Requests has support for detecting the correct encoding of
                 # json over http
                 result = get_request(uri, config=self.config).json()
@@ -1269,7 +1269,7 @@ def _get_schema_non_required_ids(
 def fields_present_generator(json_data, prefix=""):
     if isinstance(json_data, dict):
         for key, value in json_data.items():
-            new_key = prefix + "/" + key
+            new_key = f"{prefix}/{key}"
             yield new_key, value
             if isinstance(value, (dict, list)):
                 yield from fields_present_generator(value, new_key)
