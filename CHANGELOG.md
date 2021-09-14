@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.26.0] - 2021-09-15
+
 ## Changed
 
 - Various performance improvements https://github.com/open-contracting/lib-cove-oc4ids/issues/23
