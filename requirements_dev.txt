@@ -1,4 +1,7 @@
 -e .
 pytest
 flake8
+freezegun
 isort
+requests-mock
+black
