@@ -600,7 +600,7 @@ def common_checks_context(
         }
     )
 
-    json_data_gen_paths = get_json_data_generic_paths(json_data)
+    json_data_gen_paths = get_json_data_generic_paths(json_data, generic_paths={})
     context["deprecated_fields"] = get_json_data_deprecated_fields(
         json_data_gen_paths, schema_obj
     )
@@ -923,7 +923,7 @@ def get_schema_validation_errors(
     return dict(validation_errors)
 
 
-def get_json_data_generic_paths(json_data, path=(), generic_paths=None):
+def get_json_data_generic_paths(json_data, generic_paths, path=(), generic_key=()):
     """Transform json data into a dictionary with keys made of json paths.
 
     Key are json paths (as tuples). Values are dictionaries with keys including specific
@@ -957,28 +957,26 @@ def get_json_data_generic_paths(json_data, path=(), generic_paths=None):
         ('c', 'cb'): {('c', 2, 'cb'): 'cb'}
     }
     """
-    if generic_paths is None:
-        generic_paths = {}
-
-    if isinstance(json_data, dict):
-        iterable = list(json_data.items())
-        if not iterable:
-            generic_paths[path] = {}
+    if type(json_data) is list:
+        is_dict = False
+        iterable = enumerate(json_data)
+        new_generic_key = generic_key
     else:
-        iterable = list(enumerate(json_data))
-        if not iterable:
-            generic_paths[path] = []
+        is_dict = True
+        iterable = json_data.items()
 
     for key, value in iterable:
-        generic_key = tuple(i for i in path + (key,) if type(i) != int)
+        new_path = path + (key,)
+        if is_dict:
+            new_generic_key = generic_key + (key,)
 
-        if generic_paths.get(generic_key):
-            generic_paths[generic_key][path + (key,)] = value
+        if new_generic_key in generic_paths:
+            generic_paths[new_generic_key][new_path] = value
         else:
-            generic_paths[generic_key] = {path + (key,): value}
+            generic_paths[new_generic_key] = {new_path: value}
 
         if isinstance(value, (dict, list)):
-            get_json_data_generic_paths(value, path + (key,), generic_paths)
+            get_json_data_generic_paths(value, generic_paths, new_path, new_generic_key)
 
     return generic_paths
 
