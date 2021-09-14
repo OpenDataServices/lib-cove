@@ -8,7 +8,6 @@ import logging
 import numbers
 import os
 import re
-from collections import OrderedDict
 from tempfile import NamedTemporaryFile
 from urllib.parse import urljoin, urlparse, urlsplit
 from urllib.request import urlopen
@@ -331,7 +330,7 @@ class SchemaJsonMixin:
 
     @property
     def _schema_obj(self):
-        return json.loads(self.schema_str, object_pairs_hook=OrderedDict)
+        return json.loads(self.schema_str)
 
     @property
     def _pkg_schema_obj(self):
@@ -457,7 +456,7 @@ def load_core_codelists(codelist_url, unique_files, config=None):
 @functools.lru_cache()
 def _deref_schema(schema_str, schema_host, cache=None):
     loader = CustomJsonrefLoader(schema_url=schema_host, cache=cache)
-    deref_obj = jsonref.loads(schema_str, loader=loader, object_pairs_hook=OrderedDict)
+    deref_obj = jsonref.loads(schema_str, loader=loader)
     # Force evaluation of jsonref.loads here
     repr(deref_obj)
     return deref_obj
@@ -688,7 +687,7 @@ def get_additional_codelist_values(schema_obj, json_data):
 def get_additional_fields_info(json_data, schema_fields, context, fields_regex=False):
     fields_present = get_fields_present_with_examples(json_data)
 
-    additional_fields = collections.OrderedDict()
+    additional_fields = {}
     root_additional_fields = set()
 
     for field, field_info in fields_present.items():
@@ -707,7 +706,7 @@ def get_additional_fields_info(json_data, schema_fields, context, fields_regex=F
                 break
         else:
             field_info["root_additional_field"] = True
-            field_info["additional_field_descendance"] = collections.OrderedDict()
+            field_info["additional_field_descendance"] = {}
             root_additional_fields.add(field)
 
         field_info["path"] = "/".join(field.split("/")[:-1])
@@ -887,34 +886,29 @@ def get_schema_validation_errors(
         if header_extra is None:
             header_extra = header
 
-        unique_validator_key = OrderedDict(
-            [
-                ("message", message),
-                ("validator", e.validator),
-                ("assumption", e.assumption if hasattr(e, "assumption") else None),
-                # Don't pass this value for 'enum' and 'required' validators,
-                # because it is not needed, and it will mean less grouping, which
-                # we don't want.
-                (
-                    "validator_value",
-                    e.validator_value
-                    if e.validator not in ["enum", "required"]
-                    else None,
-                ),
-                ("message_type", validator_type),
-                ("path_no_number", path_no_number),
-                ("header", header),
-                ("header_extra", header_extra),
-                ("null_clause", null_clause),
-                ("error_id", e.error_id if hasattr(e, "error_id") else None),
-                ("exclusiveMinimum", e.schema.get("exclusiveMinimum")),
-                ("exclusiveMaximum", e.schema.get("exclusiveMaximum")),
-                ("extras", getattr(e, "extras", None)),
-                ("each", getattr(e, "each", None)),
-                ("property", getattr(e, "property", None)),
-                ("reprs", getattr(e, "reprs", None)),
-            ]
-        )
+        unique_validator_key = {
+            "message": message,
+            "validator": e.validator,
+            "assumption": e.assumption if hasattr(e, "assumption") else None,
+            # Don't pass this value for 'enum' and 'required' validators,
+            # because it is not needed, and it will mean less grouping, which
+            # we don't want.
+            "validator_value": e.validator_value
+            if e.validator not in ["enum", "required"]
+            else None,
+            "message_type": validator_type,
+            "path_no_number": path_no_number,
+            "header": header,
+            "header_extra": header_extra,
+            "null_clause": null_clause,
+            "error_id": e.error_id if hasattr(e, "error_id") else None,
+            "exclusiveMinimum": e.schema.get("exclusiveMinimum"),
+            "exclusiveMaximum": e.schema.get("exclusiveMaximum"),
+            "extras": getattr(e, "extras", None),
+            "each": getattr(e, "each", None),
+            "property": getattr(e, "property", None),
+            "reprs": getattr(e, "reprs", None),
+        }
         if instance is not None:
             unique_validator_key["instance"] = instance
         validation_errors[
@@ -986,10 +980,10 @@ def get_json_data_deprecated_fields(json_data_paths, schema_obj):
     deprecated_json_data_paths = [
         path for path in deprecated_schema_paths if path[0] in json_data_paths
     ]
-    # Generate an OrderedDict sorted by deprecated field names (keys) mapping
+    # Generate a dict sorted by deprecated field names (keys) mapping
     # to a unordered tuple of tuples:
     # {deprecated_field: ((path, path... ), (version, description))}
-    deprecated_fields = OrderedDict()
+    deprecated_fields = {}
     for generic_path in sorted(deprecated_json_data_paths, key=lambda tup: tup[0][-1]):
         deprecated_fields[generic_path[0][-1]] = tuple()
 
@@ -1008,7 +1002,7 @@ def get_json_data_deprecated_fields(json_data_paths, schema_obj):
             )
 
     # Order the path tuples in values for deprecated_fields.
-    deprecated_fields_output = OrderedDict()
+    deprecated_fields_output = {}
     for field, paths in deprecated_fields.items():
         sorted_paths = tuple(sorted(paths[0]))
 
@@ -1068,7 +1062,7 @@ def _generate_data_path(json_data, path=()):
 
 
 def get_fields_present_with_examples(*args, **kwargs):
-    counter = collections.OrderedDict()
+    counter = {}
     for key, value in fields_present_generator(*args, **kwargs):
         if key not in counter:
             counter[key] = {"count": 1, "examples": []}

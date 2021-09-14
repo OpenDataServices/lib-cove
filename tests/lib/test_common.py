@@ -1,6 +1,5 @@
 import json
 import os
-from collections import OrderedDict
 from datetime import datetime
 from decimal import Decimal
 from unittest import mock
@@ -211,27 +210,19 @@ def test_get_json_data_deprecated_fields():
     deprecated_data_fields = get_json_data_deprecated_fields(
         json_data_paths, schema_obj
     )
-    expected_result = OrderedDict(
-        [
-            (
-                "initiationType",
-                {
-                    "paths": ("releases/0", "releases/1"),
-                    "explanation": (
-                        "1.1",
-                        "Not a useful field as always has to be tender",
-                    ),
-                },
+    expected_result = {
+        "initiationType": {
+            "paths": ("releases/0", "releases/1"),
+            "explanation": (
+                "1.1",
+                "Not a useful field as always has to be tender",
             ),
-            (
-                "quantity",
-                {
-                    "paths": ("releases/0/tender/items/0",),
-                    "explanation": ("1.1", "Nobody cares about quantities"),
-                },
-            ),
-        ]
-    )
+        },
+        "quantity": {
+            "paths": ("releases/0/tender/items/0",),
+            "explanation": ("1.1", "Nobody cares about quantities"),
+        },
+    }
     for field_name in expected_result.keys():
         assert field_name in deprecated_data_fields
         assert (
