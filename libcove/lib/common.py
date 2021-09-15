@@ -18,11 +18,27 @@ import requests
 from cached_property import cached_property
 from flattentool import unflatten
 from jsonschema import FormatChecker, RefResolver
-from jsonschema._utils import extras_msg, find_additional_properties, uniq
+from jsonschema._utils import (
+    ensure_list,
+    extras_msg,
+    find_additional_properties,
+    types_msg,
+    uniq,
+)
 from jsonschema.exceptions import UndefinedTypeCheck, ValidationError
 
 from .exceptions import cove_spreadsheet_conversion_error
 from .tools import decimal_default, get_request
+
+
+def type_validator(validator, types, instance, schema):
+    types = ensure_list(types)
+
+    for type in types:
+        if validator.is_type(instance, type):
+            break
+    else:
+        yield ValidationError(types_msg(instance, types))
 
 
 class TypeChecker:
@@ -52,7 +68,9 @@ class TypeChecker:
 # Otherwise we could cause conflicts with other software in the same process.
 validator = jsonschema.validators.extend(
     jsonschema.validators.Draft4Validator,
-    validators={},
+    validators={
+        "type": type_validator,
+    },
     type_checker=TypeChecker(),
 )
 

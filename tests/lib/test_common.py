@@ -765,7 +765,7 @@ def test_dont_error_on_decimal_in_unique_validator_key():
 
         def get_pkg_schema_obj(self):
             return {
-                "type": "array",
+                "type": ["array"],
                 "minItems": 2,
             }
 
