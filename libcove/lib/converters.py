@@ -56,7 +56,7 @@ def convert_spreadsheet(
         input_name = os.path.join(upload_dir, "csv_dir")
         os.makedirs(input_name, exist_ok=True)
         destination = os.path.join(
-            input_name, lib_cove_config.config["root_list_path"] + ".csv"
+            input_name, f"{lib_cove_config.config['root_list_path']}.csv"
         )
         shutil.copy(file_name, destination)
         try:
@@ -195,7 +195,7 @@ def convert_json(
         conversion_warning_cache_path = os.path.join(
             upload_dir, "conversion_warning_messages.json"
         )
-        conversion_exists = os.path.exists(converted_path + ".xlsx")
+        conversion_exists = os.path.exists(f"{converted_path}.xlsx")
         if not conversion_exists or replace:
             with warnings.catch_warnings(record=True) as conversion_warnings:
                 if flatten or (replace and conversion_exists):
@@ -214,7 +214,7 @@ def convert_json(
             with open(conversion_warning_cache_path) as fp:
                 context["conversion_warning_messages"] = json.load(fp)
 
-        context["converted_file_size"] = os.path.getsize(converted_path + ".xlsx")
+        context["converted_file_size"] = os.path.getsize(f"{converted_path}.xlsx")
         conversion_warning_cache_path_titles = os.path.join(
             upload_dir, "conversion_warning_messages_titles.json"
         )
@@ -222,9 +222,9 @@ def convert_json(
         if lib_cove_config.config["convert_titles"]:
             with warnings.catch_warnings(record=True) as conversion_warnings_titles:
                 flatten_kwargs.update(
-                    dict(output_name=converted_path + "-titles", use_titles=True)
+                    dict(output_name=f"{converted_path}-titles", use_titles=True)
                 )
-                if not os.path.exists(converted_path + "-titles.xlsx") or replace:
+                if not os.path.exists(f"{converted_path}-titles.xlsx") or replace:
                     flattentool.flatten(file_name, **flatten_kwargs)
                     context[
                         "conversion_warning_messages_titles"
@@ -236,7 +236,7 @@ def convert_json(
                         context["conversion_warning_messages_titles"] = json.load(fp)
 
             context["converted_file_size_titles"] = os.path.getsize(
-                converted_path + "-titles.xlsx"
+                f"{converted_path}-titles.xlsx"
             )
 
     except BadlyFormedJSONError as err:

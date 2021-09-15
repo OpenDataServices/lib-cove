@@ -57,7 +57,7 @@ def decimal_default(o):
             return int(o)
         else:
             return NumberStr(o)
-    raise TypeError(repr(o) + " is not JSON serializable")
+    raise TypeError(f"{repr(o)} is not JSON serializable")
 
 
 def to_list(item):
