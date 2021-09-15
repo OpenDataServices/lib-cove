@@ -32,6 +32,13 @@ from .tools import decimal_default, get_request
 
 
 def type_validator(validator, types, instance, schema):
+    """
+    Replace the jsonschema type validator to use for-loop instead of slower
+    any() with generator expression.
+
+    https://github.com/OpenDataServices/lib-cove/pull/66
+
+    """
     types = ensure_list(types)
 
     for type in types:
