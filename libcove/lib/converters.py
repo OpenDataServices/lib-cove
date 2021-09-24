@@ -12,16 +12,6 @@ from .exceptions import cove_spreadsheet_conversion_error
 logger = logging.getLogger(__name__)
 
 
-def filter_conversion_warnings(conversion_warnings):
-    out = []
-    for w in conversion_warnings:
-        if w.category is flattentool.exceptions.DataErrorWarning:
-            out.append(str(w.message))
-        else:
-            logger.warning(w)
-    return out
-
-
 @cove_spreadsheet_conversion_error
 def convert_spreadsheet(
     upload_dir,
@@ -36,7 +26,18 @@ def convert_spreadsheet(
     xml=False,
     xml_schemas=None,
     cache=True,
+    conversion_warning_hook=lambda w: str(w.message),
 ):
+
+    def filter_conversion_warnings(conversion_warnings):
+        out = []
+        for w in conversion_warnings:
+            if w.category is flattentool.exceptions.DataErrorWarning:
+                out.append(conversion_warning_hook(w))
+            else:
+                logger.warning(w)
+        return out
+
     context = {}
     if xml:
         output_file = "unflattened.xml"
