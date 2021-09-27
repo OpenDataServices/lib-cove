@@ -12,7 +12,7 @@ setup(
     install_requires=[
         "jsonref",
         "jsonschema",
-        "requests>3",
+        "requests>=3.0.0",
         "cached-property",
         "flattentool>=0.11.0",
         # Required for jsonschema to validate URIs
