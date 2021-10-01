@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+
+## Changed
+
+- Lock to jsonschema version 3
+
 ## [0.26.0] - 2021-09-15
 
 ## Changed
