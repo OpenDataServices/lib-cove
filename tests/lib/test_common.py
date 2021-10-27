@@ -1203,3 +1203,97 @@ def test_get_field_coverage_oc4ids():
         )
         == open(common_fixtures("oc4ids_example_coverage.json")).read()
     )
+
+
+@pytest.mark.parametrize(
+    ("data", "count", "errors"),
+    (
+        # Good cat
+        ({"pet": "cat", "purry": "Very"}, 0, []),
+        # Good dog
+        ({"pet": "dog", "waggy": "Very"}, 0, []),
+        # A cat with a wrong required field
+        (
+            {"pet": "cat", "waggy": "Yes!"},
+            1,
+            [{"message": "'purry' is missing but required"}],
+        ),
+        # A dog with a wrong required field
+        (
+            {"pet": "dog", "purry": "Yes!"},
+            1,
+            [{"message": "'waggy' is missing but required"}],
+        ),
+    ),
+)
+def test_oneOfEnumSelectorField(data, count, errors):
+
+    with open(common_fixtures("schema_with_one_of_enum_selector_field.json")) as fp:
+        schema = json.load(fp)
+
+    class DummySchemaObj:
+        config = None
+        schema_host = None
+
+        def get_pkg_schema_obj(self):
+            return schema
+
+    validation_errors = get_schema_validation_errors(data, DummySchemaObj(), "", {}, {})
+
+    assert count == len(validation_errors)
+
+    for i in range(0, len(errors)):
+        validation_error_json = json.loads(list(validation_errors.keys())[i])
+        assert validation_error_json["message"] == errors[i]["message"]
+
+
+@pytest.mark.parametrize(
+    ("data", "count", "errors"),
+    (
+        # Good cat
+        ([{"statementType": "animal", "pet": "cat", "purry": "Very"}], 0, []),
+        # Good dog
+        ([{"statementType": "animal", "pet": "dog", "waggy": "Very"}], 0, []),
+        # A cat with a wrong required field
+        (
+            [{"statementType": "animal", "pet": "cat", "waggy": "Yes!"}],
+            1,
+            [{"message": "'purry' is missing but required"}],
+        ),
+        # A dog with a wrong required field
+        (
+            [{"statementType": "animal", "pet": "dog", "purry": "Yes!"}],
+            1,
+            [{"message": "'waggy' is missing but required"}],
+        ),
+        # A house
+        ([{"statementType": "property"}], 0, []),
+    ),
+)
+def test_one_of_enum_selector_field_inside_one_of_enum_selector_field(
+    data, count, errors
+):
+    """This replicates how this will be used in BODS.
+    It also tests that the 'statementType' key is checked by default."""
+
+    with open(
+        common_fixtures(
+            "schema_with_one_of_enum_selector_field_inside_one_of_enum_selector_field.json"
+        )
+    ) as fp:
+        schema = json.load(fp)
+
+    class DummySchemaObj:
+        config = None
+        schema_host = None
+
+        def get_pkg_schema_obj(self):
+            return schema
+
+    validation_errors = get_schema_validation_errors(data, DummySchemaObj(), "", {}, {})
+
+    assert count == len(validation_errors)
+
+    for i in range(0, len(errors)):
+        validation_error_json = json.loads(list(validation_errors.keys())[i])
+        assert validation_error_json["message"] == errors[i]["message"]

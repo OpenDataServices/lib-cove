@@ -162,40 +162,47 @@ def oneOf_draft4(validator, oneOf, instance, schema):
     Modified to:
     - sort the instance JSON, so we get a reproducible output that we
       can can test more easily
-    - If `statementType` is available, use that pick the correct
-      sub-schema, and to yield those ValidationErrors. (Only
-      applicable for BODS).
+    - If `oneOfEnumSelectorField` is set in schema, use that field to pick the correct
+      sub-schema, and to yield those ValidationErrors.
+    - If `oneOfEnumSelectorField` is not set in schema, assume it should be "statementType" and use the same logic.
+      (This is historical code for BODS)
     """
+
+    one_of_enum_selector_field = schema.get("oneOfEnumSelectorField", "statementType")
     subschemas = enumerate(oneOf)
     all_errors = []
-    validStatementTypes = []
+    valid_selector_field_values = []
     for index, subschema in subschemas:
         errs = list(validator.descend(instance, subschema, schema_path=index))
         if not errs:
             first_valid = subschema
             break
         properties = subschema.get("properties", {})
-        if "statementType" in properties:
-            if "statementType" in instance:
-                try:
-                    validStatementType = properties["statementType"].get("enum", [])[0]
-                except IndexError:
-                    continue
-                if instance["statementType"] == validStatementType:
+        if one_of_enum_selector_field in properties:
+            if one_of_enum_selector_field in instance:
+                selector_field_values_in_this_subschema = properties[
+                    one_of_enum_selector_field
+                ].get("enum", [])
+                if (
+                    instance[one_of_enum_selector_field]
+                    in selector_field_values_in_this_subschema
+                ):
                     for err in errs:
                         yield err
                     return
                 else:
-                    validStatementTypes.append(validStatementType)
+                    valid_selector_field_values.extend(
+                        selector_field_values_in_this_subschema
+                    )
             else:
-                yield ValidationError("statementType", validator="required")
+                yield ValidationError(one_of_enum_selector_field, validator="required")
                 break
         all_errors.extend(errs)
     else:
-        if validStatementTypes:
+        if valid_selector_field_values:
             yield ValidationError(
-                "Invalid code found in statementType",
-                instance=instance["statementType"],
+                "Invalid code found in " + one_of_enum_selector_field,
+                instance=instance[one_of_enum_selector_field],
                 path=("statementType",),
                 validator="enum",
             )
