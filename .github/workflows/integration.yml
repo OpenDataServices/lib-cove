@@ -26,7 +26,7 @@ jobs:
       run: |
         git clone https://github.com/open-contracting/cove-ocds.git
         cd cove-ocds
-        git checkout generic-paths-tests
+        git checkout main
         cd ..
         git clone https://github.com/open-contracting/lib-cove-ocds.git
 
@@ -35,7 +35,7 @@ jobs:
       run: |
         git clone https://github.com/openownership/cove-bods.git
         cd cove-bods
-        git checkout update-requirements-jsonschema
+        git checkout master
         cd ..
         git clone https://github.com/openownership/lib-cove-bods.git
 
