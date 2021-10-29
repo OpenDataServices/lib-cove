@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## Added
+
+- oneOf validator will read a new "oneOfEnumSelectorField" option in schema and use that to pick subschema.
+  (Previously this worked for "statementType" only, for BODS)
+
 ## [0.26.1] - 2021-10-01
 
 ## Changed

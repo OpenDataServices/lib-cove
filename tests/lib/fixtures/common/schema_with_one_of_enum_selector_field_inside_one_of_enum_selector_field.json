@@ -1,0 +1,75 @@
+{
+  "id": "bods-package.json",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "version": "0.2",
+  "type": "array",
+  "items": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "statementType": {
+            "type": "string",
+            "enum": [
+              "animal"
+            ]
+          },
+          "pet": {
+            "type": "string",
+            "enum": [
+              "cat",
+              "dog"
+            ]
+          },
+          "waggy": {
+            "type": "string"
+          },
+          "purry": {
+            "type": "string"
+          }
+        },
+        "oneOfEnumSelectorField": "pet",
+        "oneOf": [
+          {
+            "properties": {
+              "pet": {
+                "enum": [
+                  "cat"
+                ]
+              }
+            },
+            "required": [
+              "pet",
+              "purry"
+            ]
+          },
+          {
+            "properties": {
+              "pet": {
+                "enum": [
+                  "dog"
+                ]
+              }
+            },
+            "required": [
+              "pet",
+              "waggy"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "object",
+        "properties": {
+          "statementType": {
+            "type": "string",
+            "enum": [
+              "property"
+            ]
+          }
+        }
+      }
+    ]
+  }
+}
+

@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "pet": {
+      "type": "string",
+      "enum": [
+        "cat",
+        "dog"
+      ]
+    },
+    "waggy": {
+      "type": "string"
+    },
+    "purry": {
+      "type": "string"
+    }
+  },
+  "oneOfEnumSelectorField": "pet",
+  "oneOf": [
+    {
+      "properties": {
+        "pet": {
+          "enum": [
+            "cat"
+          ]
+        }
+      },
+      "required": [
+        "pet",
+        "purry"
+      ]
+    },
+    {
+      "properties": {
+        "pet": {
+          "enum": [
+            "dog"
+          ]
+        }
+      },
+      "required": [
+        "pet",
+        "waggy"
+      ]
+    }
+  ]
+}
