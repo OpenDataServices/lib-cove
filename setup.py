@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="libcove",
-    version="0.26.1",
+    version="0.27.0",
     author="Open Data Services",
     author_email="code@opendataservices.coop",
     url="https://github.com/OpenDataServices/lib-cove",
@@ -18,7 +18,7 @@ setup(
         # Required for jsonschema to validate URIs
         "rfc3987",
         # Required for jsonschema to validate date-time
-        "strict-rfc3339",
+        "rfc3339-validator",
     ],
     classifiers=[
         "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)"
