@@ -18,7 +18,7 @@ setup(
         # Required for jsonschema to validate URIs
         "rfc3987",
         # Required for jsonschema to validate date-time
-        "strict-rfc3339",
+        "rfc3339-validator",
     ],
     classifiers=[
         "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)"

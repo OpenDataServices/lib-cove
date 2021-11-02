@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - oneOf validator will read a new "oneOfEnumSelectorField" option in schema and use that to pick subschema.
   (Previously this worked for "statementType" only, for BODS)
 
+## Changed
+
+- Switch from strict-rfc3339 to rfc3339-validator, because jsonschema has dropped support https://github.com/OpenDataServices/lib-cove/issues/97
+
 ## [0.26.1] - 2021-10-01
 
 ## Changed
