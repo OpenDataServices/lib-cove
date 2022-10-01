@@ -108,7 +108,7 @@ def unique_ids(validator, ui, instance, schema, id_names=["id"]):
         all_ids = set()
         for item in instance:
             try:
-                item_ids = tuple(item.get(id_name) for id_name in id_names)
+                item_ids = tuple(str(item.get(id_name)) for id_name in id_names)
             except AttributeError:
                 # if item is not a dict
                 item_ids = None
