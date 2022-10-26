@@ -111,18 +111,15 @@ def test_unique_ids_True():
     assert validation_errors_to_tuples(
         unique_ids(validator, ui, [{"id": ""}, {"id": ""}], schema, id_names=["id"])
     ) == [("Non-unique id values", "uniqueItems_with_id")]
-    assert (
-        validation_errors_to_tuples(
-            unique_ids(
-                validator,
-                ui,
-                [{"id": "1", "other": "a"}, {"id": "1", "other": "b"}],
-                schema,
-                id_names=["id"],
-            )
+    assert validation_errors_to_tuples(
+        unique_ids(
+            validator,
+            ui,
+            [{"id": "1", "other": "a"}, {"id": "1", "other": "b"}],
+            schema,
+            id_names=["id"],
         )
-        == [("Non-unique id values", "uniqueItems_with_id")]
-    )
+    ) == [("Non-unique id values", "uniqueItems_with_id")]
 
     assert validation_errors_to_tuples(
         unique_ids(validator, ui, [{}, {}], schema, id_names=["ocid"])
@@ -132,55 +129,46 @@ def test_unique_ids_True():
             validator, ui, [{"ocid": ""}, {"ocid": ""}], schema, id_names=["ocid"]
         )
     ) == [("Non-unique ocid values", "uniqueItems_with_ocid")]
-    assert (
-        validation_errors_to_tuples(
-            unique_ids(
-                validator,
-                ui,
-                [{"ocid": "1", "other": "a"}, {"ocid": "1", "other": "b"}],
-                schema,
-                id_names=["ocid"],
-            )
+    assert validation_errors_to_tuples(
+        unique_ids(
+            validator,
+            ui,
+            [{"ocid": "1", "other": "a"}, {"ocid": "1", "other": "b"}],
+            schema,
+            id_names=["ocid"],
         )
-        == [("Non-unique ocid values", "uniqueItems_with_ocid")]
-    )
+    ) == [("Non-unique ocid values", "uniqueItems_with_ocid")]
 
     assert validation_errors_to_tuples(
         unique_ids(validator, ui, [{}, {}], schema, id_names=["ocid", "id"])
     ) == [("Array has non-unique elements", "uniqueItems_no_ids")]
     # If only one of the id names is present, then we get the generic message
-    assert (
-        validation_errors_to_tuples(
-            unique_ids(
-                validator,
-                ui,
-                [{"ocid": "1"}, {"ocid": "1"}],
-                schema,
-                id_names=["ocid", "id"],
-            )
+    assert validation_errors_to_tuples(
+        unique_ids(
+            validator,
+            ui,
+            [{"ocid": "1"}, {"ocid": "1"}],
+            schema,
+            id_names=["ocid", "id"],
         )
-        == [("Array has non-unique elements", "uniqueItems_no_ids")]
-    )
+    ) == [("Array has non-unique elements", "uniqueItems_no_ids")]
     assert validation_errors_to_tuples(
         unique_ids(
             validator, ui, [{"id": "1"}, {"id": "1"}], schema, id_names=["ocid", "id"]
         )
     ) == [("Array has non-unique elements", "uniqueItems_no_ids")]
-    assert (
-        validation_errors_to_tuples(
-            unique_ids(
-                validator,
-                ui,
-                [
-                    {"ocid": "1", "id": "1", "other": "a"},
-                    {"ocid": "1", "id": "1", "other": "b"},
-                ],
-                schema,
-                id_names=["ocid", "id"],
-            )
+    assert validation_errors_to_tuples(
+        unique_ids(
+            validator,
+            ui,
+            [
+                {"ocid": "1", "id": "1", "other": "a"},
+                {"ocid": "1", "id": "1", "other": "b"},
+            ],
+            schema,
+            id_names=["ocid", "id"],
         )
-        == [("Non-unique combination of ocid, id values", "uniqueItems_with_ocid__id")]
-    )
+    ) == [("Non-unique combination of ocid, id values", "uniqueItems_with_ocid__id")]
 
 
 def test_get_json_data_deprecated_fields():
@@ -1144,9 +1132,10 @@ def test_get_field_coverage():
     )
 
     # Test that refs to the same object are counted separately
-    assert get_field_coverage(
-        schema_obj_from_str(
-            """{
+    assert (
+        get_field_coverage(
+            schema_obj_from_str(
+                """{
                     "properties": {
                         "test1": {"$ref": "#/definitions/Test"},
                         "test2": {"$ref": "#/definitions/Test"}
@@ -1157,30 +1146,36 @@ def test_get_field_coverage():
                         }
                     }
             }"""
-        ),
-        [{}, {"test1": {"child": "not empty"}}, {"test1": {}}],
-    )["properties"] == {
-        "test1": {
-            "properties": {
-                "child": {"coverage": {"checks": 2, "successes": 1, "percentage": 50}}
+            ),
+            [{}, {"test1": {"child": "not empty"}}, {"test1": {}}],
+        )["properties"]
+        == {
+            "test1": {
+                "properties": {
+                    "child": {
+                        "coverage": {"checks": 2, "successes": 1, "percentage": 50}
+                    }
+                },
+                "coverage": {
+                    "checks": 3,
+                    "successes": 1,
+                    "percentage": 33,
+                },
             },
-            "coverage": {
-                "checks": 3,
-                "successes": 1,
-                "percentage": 33,
+            "test2": {
+                "properties": {
+                    "child": {
+                        "coverage": {"checks": 0, "successes": 0, "percentage": 0}
+                    }
+                },
+                "coverage": {
+                    "checks": 3,
+                    "successes": 0,
+                    "percentage": 0,
+                },
             },
-        },
-        "test2": {
-            "properties": {
-                "child": {"coverage": {"checks": 0, "successes": 0, "percentage": 0}}
-            },
-            "coverage": {
-                "checks": 3,
-                "successes": 0,
-                "percentage": 0,
-            },
-        },
-    }
+        }
+    )
 
 
 def common_fixtures(filename):
