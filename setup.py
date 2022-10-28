@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="libcove",
-    version="0.27.0",
+    version="0.27.1",
     author="Open Data Services",
     author_email="code@opendataservices.coop",
     url="https://github.com/OpenDataServices/lib-cove",
