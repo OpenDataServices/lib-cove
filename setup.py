@@ -10,7 +10,7 @@ setup(
     packages=find_packages(),
     long_description="A data review library",
     install_requires=[
-        "jsonref",
+        "jsonref<1",
         "jsonschema>=3,<4",
         "requests",
         "cached-property",
