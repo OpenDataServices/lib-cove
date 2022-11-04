@@ -134,7 +134,7 @@ def unique_ids(validator, ui, instance, schema, id_names=["id"]):
                 msg = "Non-unique {} values".format(id_names[0])
             else:
                 msg = "Non-unique combination of {} values".format(", ".join(id_names))
-            err = ValidationError(msg, instance=", ".join(non_unique_id))
+            err = ValidationError(msg, instance=", ".join(map(str, non_unique_id)))
             err.error_id = "uniqueItems_with_{}".format("__".join(id_names))
             yield err
 
