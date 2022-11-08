@@ -34,6 +34,7 @@ def test_unique_ids_False():
     assert list(unique_ids(validator, ui, [], schema)) == []
     assert list(unique_ids(validator, ui, [{}, {}], schema)) == []
     assert list(unique_ids(validator, ui, [{"id": "1"}, {"id": "2"}], schema)) == []
+    assert list(unique_ids(validator, ui, [{"id": "1"}, {"id": 1}], schema)) == []
 
 
 def test_unique_ids_True():
@@ -103,6 +104,9 @@ def test_unique_ids_True():
     ) == [("Non-unique id values", "uniqueItems_with_id")]
     assert validation_errors_to_tuples(
         unique_ids(validator, ui, [{"id": "1"}, {"id": "1"}], schema)
+    ) == [("Non-unique id values", "uniqueItems_with_id")]
+    assert validation_errors_to_tuples(
+        unique_ids(validator, ui, [{"id": 1}, {"id": 1}], schema)
     ) == [("Non-unique id values", "uniqueItems_with_id")]
 
     assert validation_errors_to_tuples(
