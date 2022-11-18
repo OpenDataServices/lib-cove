@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Numeric "id" values no longer cause an exception while yielding a validation error about non-unique IDs.
+- Make work with all versions of jsonref
 
 ## [0.27.1] - 2022-10-28
 

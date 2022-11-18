@@ -10,6 +10,7 @@ jobs:
         # We also only use Linux servers, so don't test on Mac
         os: [ubuntu-latest]
         python-version: [3.6, 3.7, 3.8, 3.9, "3.10"]
+        jsonref-version: ["==0.3", ">1"]
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v1
@@ -19,5 +20,6 @@ jobs:
       run: |
         pip install -r requirements_dev.txt
         pip install .
+        pip install 'jsonref${{ matrix.jsonref-version }}'
     - name: Test
       run: py.test tests/
