@@ -9,7 +9,7 @@ jobs:
         # https://github.com/OpenDataServices/lib-cove/issues/53
         # We also only use Linux servers, so don't test on Mac
         os: [ubuntu-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9, "3.10"]
+        python-version: [ 3.6, 3.7, 3.8, 3.9, "3.10", "3.11" ]
         jsonref-version: ["==0.3", ">1"]
     steps:
     - uses: actions/checkout@v2

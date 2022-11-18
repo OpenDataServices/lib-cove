@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.28.0] - 2022-11-18
+
 ### Fixed
 
 - Numeric "id" values no longer cause an exception while yielding a validation error about non-unique IDs.
