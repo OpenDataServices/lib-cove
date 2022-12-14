@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Added
 
+## [0.29.0] - 2022-12-14
+
 - Add `SchemaJsonMixin.process_codelists` (previously only existed in lib-cove-ocds, will be used by 360 CoVE) https://github.com/OpenDataServices/lib-cove/pull/109
 
 ## [0.28.0] - 2022-11-18
