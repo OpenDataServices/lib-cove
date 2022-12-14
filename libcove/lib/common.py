@@ -382,13 +382,38 @@ class SchemaJsonMixin:
             return self.deref_schema(self.schema_str)
         return self._schema_obj
 
-    def get_pkg_schema_obj(self, deref=False):
+    def get_pkg_schema_obj(self, deref=False, use_extensions=False):
         if deref:
             return self.deref_schema(self.pkg_schema_str)
         return self._pkg_schema_obj
 
     def get_pkg_schema_fields(self):
         return set(schema_dict_fields_generator(self.get_pkg_schema_obj(deref=True)))
+
+    def process_codelists(self):
+        # From https://github.com/open-contracting/lib-cove-ocds/blob/051c25717f22f20c968b13071805a4b79c82b91c/libcoveocds/schema.py#L99-L160
+        # but with support for extended codelists removed.
+
+        self.core_codelist_schema_paths = get_schema_codelist_paths(
+            self, use_extensions=False
+        )
+        self.extended_codelist_schema_paths = self.core_codelist_schema_paths
+
+        core_unique_files = frozenset(
+            value[0] for value in self.core_codelist_schema_paths.values()
+        )
+        self.core_codelists = load_core_codelists(
+            self.codelists,
+            core_unique_files,
+            config=self.config if hasattr(self, "config") else None,
+        )
+
+        self.extended_codelists = self.core_codelists
+        self.extended_codelist_urls = {}
+        # we do not want to cache if the requests failed.
+        if not self.core_codelists:
+            load_core_codelists.cache_clear()
+            return
 
 
 def schema_dict_fields_generator(schema_dict):
