@@ -14,6 +14,7 @@ from libcove.lib.common import (
     add_field_coverage,
     add_field_coverage_percentages,
     fields_present_generator,
+    get_additional_codelist_values,
     get_additional_fields_info,
     get_field_coverage,
     get_fields_present,
@@ -1296,3 +1297,49 @@ def test_one_of_enum_selector_field_inside_one_of_enum_selector_field(
     for i in range(0, len(errors)):
         validation_error_json = json.loads(list(validation_errors.keys())[i])
         assert validation_error_json["message"] == errors[i]["message"]
+
+
+def test_get_additional_codelist_values():
+    with open(
+        os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            "fixtures",
+            "common",
+            "tenders_releases_2_releases_codelists.json",
+        )
+    ) as fp:
+        json_data = json.load(fp)
+
+    schema_obj = SchemaJsonMixin()
+    schema_obj.schema_host = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "fixtures", "common/"
+    )
+    schema_obj.release_pkg_schema_name = "release-package-schema.json"
+    schema_obj.pkg_schema_url = os.path.join(
+        schema_obj.schema_host, schema_obj.release_pkg_schema_name
+    )
+    schema_obj.codelists = "https://raw.githubusercontent.com/open-contracting/standard/1.1/schema/codelists/"
+
+    additional_codelist_values = get_additional_codelist_values(schema_obj, json_data)
+    assert additional_codelist_values == {
+        ("releases/tag"): {
+            "codelist": "releaseTag.csv",
+            "codelist_url": "https://raw.githubusercontent.com/open-contracting/standard/1.1/schema/codelists/releaseTag.csv",
+            "codelist_amend_urls": [],
+            "field": "tag",
+            "extension_codelist": False,
+            "isopen": False,
+            "path": "releases",
+            "values": ["oh no"],
+        },
+        ("releases/tender/items/classification/scheme"): {
+            "codelist": "itemClassificationScheme.csv",
+            "codelist_url": "https://raw.githubusercontent.com/open-contracting/standard/1.1/schema/codelists/itemClassificationScheme.csv",
+            "codelist_amend_urls": [],
+            "extension_codelist": False,
+            "field": "scheme",
+            "isopen": True,
+            "path": "releases/tender/items/classification",
+            "values": ["GSINS"],
+        },
+    }
