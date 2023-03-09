@@ -18,17 +18,33 @@ import requests
 from cached_property import cached_property
 from flattentool import unflatten
 from jsonschema import FormatChecker, RefResolver
-from jsonschema._utils import (
-    ensure_list,
-    extras_msg,
-    find_additional_properties,
-    types_msg,
-    uniq,
-)
+from jsonschema._utils import ensure_list, extras_msg, find_additional_properties, uniq
 from jsonschema.exceptions import UndefinedTypeCheck, ValidationError
 
 from .exceptions import cove_spreadsheet_conversion_error
 from .tools import decimal_default, get_request
+
+REQUIRED_RE = re.compile(r"^'([^']+)'")
+
+
+# This function was inlined in jsonschema 4.
+def types_msg(instance, types):
+    """
+    Create an error message for a failure to match the given types.
+
+    If the ``instance`` is an object and contains a ``name`` property, it will
+    be considered to be a description of that object and used as its type.
+
+    Otherwise the message is simply the reprs of the given ``types``.
+    """
+
+    reprs = []
+    for type in types:
+        try:
+            reprs.append(repr(type["name"]))
+        except Exception:
+            reprs.append(repr(type))
+    return "%r is not of type %s" % (instance, ", ".join(reprs))
 
 
 def type_validator(validator, types, instance, schema):
@@ -893,7 +909,13 @@ def get_schema_validation_errors(
             value["value"] = e.instance
 
         if e.validator == "required":
-            field_name = e.message
+            match = REQUIRED_RE.search(e.message)
+            # jsonschema 4 sets the message to "'id' is a required property".
+            if match:
+                field_name = match.group(1)
+            # jsonschema 3 sets the message to "id".
+            else:
+                field_name = e.message
             parent_name = None
             if len(e.path) > 2:
                 if isinstance(e.path[-1], int):

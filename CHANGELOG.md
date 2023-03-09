@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## Added
+## Changed
+
+- Allow jsonschema version 4.
 
 ## [0.29.0] - 2022-12-14
 
