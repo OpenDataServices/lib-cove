@@ -15,7 +15,12 @@ from urllib.request import urlopen
 import jsonref
 import jsonschema.validators
 import requests
-from cached_property import cached_property
+
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
+
 from flattentool import unflatten
 from jsonschema import FormatChecker, RefResolver
 from jsonschema._utils import ensure_list, extras_msg, find_additional_properties, uniq

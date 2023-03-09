@@ -13,7 +13,7 @@ setup(
         "jsonref",
         "jsonschema>=3",
         "requests",
-        "cached-property",
+        "cached-property;python_version<'3.8'",
         "flattentool>=0.11.0",
         # Required for jsonschema to validate URIs
         "rfc3987",
