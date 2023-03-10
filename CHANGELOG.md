@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Changed
 
+## [0.30.0] - 2023-03-10
+
 - Allow jsonschema version 4.
 - Support arrays of strings that must be on a codelist https://github.com/ThreeSixtyGiving/dataquality/issues/80
 
