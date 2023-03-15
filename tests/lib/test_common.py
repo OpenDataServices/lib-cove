@@ -1342,4 +1342,14 @@ def test_get_additional_codelist_values():
             "path": "releases/tender/items/classification",
             "values": ["GSINS"],
         },
+        ("releases/aCodelistArray"): {
+            "path": "releases",
+            "field": "aCodelistArray",
+            "codelist": "releaseTag.csv",
+            "codelist_url": "https://raw.githubusercontent.com/open-contracting/standard/1.1/schema/codelists/releaseTag.csv",
+            "codelist_amend_urls": [],
+            "isopen": False,
+            "values": ["AAA"],
+            "extension_codelist": False,
+        },
     }

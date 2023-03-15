@@ -15,7 +15,12 @@ from urllib.request import urlopen
 import jsonref
 import jsonschema.validators
 import requests
-from cached_property import cached_property
+
+try:
+    from functools import cached_property
+except ImportError:
+    from cached_property import cached_property
+
 from flattentool import unflatten
 from jsonschema import FormatChecker, RefResolver
 from jsonschema._utils import ensure_list, extras_msg, find_additional_properties, uniq
@@ -488,12 +493,15 @@ def get_schema_codelist_paths(
 
         if value.get("type") == "object":
             get_schema_codelist_paths(None, value, path, codelist_paths)
-        elif (
-            value.get("type") == "array"
-            and isinstance(value.get("items"), dict)
-            and value.get("items").get("properties")
-        ):
-            get_schema_codelist_paths(None, value["items"], path, codelist_paths)
+        elif value.get("type") == "array" and isinstance(value.get("items"), dict):
+            if value.get("items").get("type") == "string":
+                if "codelist" in value["items"] and path not in codelist_paths:
+                    codelist_paths[path] = (
+                        value["items"]["codelist"],
+                        value["items"].get("openCodelist", False),
+                    )
+            elif value.get("items").get("properties"):
+                get_schema_codelist_paths(None, value["items"], path, codelist_paths)
 
     return codelist_paths
 

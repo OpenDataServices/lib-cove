@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="libcove",
-    version="0.29.0",
+    version="0.30.0",
     author="Open Data Services",
     author_email="code@opendataservices.coop",
     url="https://github.com/OpenDataServices/lib-cove",
@@ -13,7 +13,7 @@ setup(
         "jsonref",
         "jsonschema>=3",
         "requests",
-        "cached-property",
+        "cached-property;python_version<'3.8'",
         "flattentool>=0.11.0",
         # Required for jsonschema to validate URIs
         "rfc3987",
