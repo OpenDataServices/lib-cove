@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Fix crash when tmp directory is on different filesystem https://github.com/OpenDataServices/lib-cove/issues/84
 - Use sentence case consistently in validation error messages https://github.com/OpenDataServices/lib-cove/issues/28
+- Support jsonschema>=4.10 https://github.com/OpenDataServices/lib-cove/pull/118
 
 ## Changed
 
@@ -18,7 +19,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Allow jsonschema version 4.
 - Support arrays of strings that must be on a codelist https://github.com/ThreeSixtyGiving/dataquality/issues/80
-
 
 ## [0.29.0] - 2022-12-14
 

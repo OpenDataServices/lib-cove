@@ -333,7 +333,6 @@ def test_get_schema_deprecated_paths():
 
 
 def test_schema_dict_fields_generator_release_schema_deprecated_fields():
-
     with open(
         os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
@@ -362,7 +361,6 @@ def test_schema_dict_fields_generator_release_schema_deprecated_fields():
 
 
 def test_schema_dict_fields_generator_schema_with_list_and_oneof():
-
     with open(
         os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
@@ -396,7 +394,6 @@ def test_schema_dict_fields_generator_schema_with_list_and_oneof():
 
 
 def test_fields_present_generator_tenders_releases_2_releases():
-
     with open(
         os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
@@ -449,7 +446,6 @@ def test_fields_present_generator_tenders_releases_2_releases():
 
 
 def test_fields_present_generator_data_root_is_list():
-
     with open(
         os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
@@ -501,7 +497,6 @@ def test_fields_present_generator_data_root_is_list():
 
 
 def test_get_additional_fields_info():
-
     simple_data = {
         "non_additional_field": "a",
         "non_additional_list": [1, 2],
@@ -1227,7 +1222,6 @@ def test_get_field_coverage_oc4ids():
     ),
 )
 def test_oneOfEnumSelectorField(data, count, errors):
-
     with open(common_fixtures("schema_with_one_of_enum_selector_field.json")) as fp:
         schema = json.load(fp)
 
