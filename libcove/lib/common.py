@@ -8,6 +8,7 @@ import logging
 import numbers
 import os
 import re
+import shutil
 from tempfile import NamedTemporaryFile
 from urllib.parse import urljoin, urlparse, urlsplit
 from urllib.request import urlopen
@@ -1445,7 +1446,7 @@ def get_orgids_prefixes(orgids_url=None):
         # Use a tempfile and move to create new file here for atomicity
         with NamedTemporaryFile(mode="w", delete=False) as tmp:
             json.dump(org_id_file_contents, tmp, indent=2)
-        os.rename(tmp.name, local_org_ids_file)
+        shutil.move(tmp.name, local_org_ids_file)
     # Return either the original file data, if it was found to be fresh, or the new data, if we were able to retrieve it.
     return [org_list["code"] for org_list in org_id_file_contents["lists"]]
 

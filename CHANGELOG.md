@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix crash when tmp directory is on different filesystem https://github.com/OpenDataServices/lib-cove/issues/84
+
 ## Changed
 
 ## [0.30.0] - 2023-03-10
