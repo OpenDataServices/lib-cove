@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Fix crash when tmp directory is on different filesystem https://github.com/OpenDataServices/lib-cove/issues/84
+- Use sentence case consistently in validation error messages https://github.com/OpenDataServices/lib-cove/issues/28
 
 ## Changed
 

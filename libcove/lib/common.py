@@ -888,7 +888,7 @@ def get_schema_validation_errors(
             header = e.path[-1]
             if isinstance(e.path[-1], int) and len(e.path) >= 2:
                 # We're dealing with elements in an array of items at this point
-                pre_header = "Array Element "
+                pre_header = "Array element "
                 header_extra = "{}/[number]".format(e.path[-2])
 
         null_clause = ""
