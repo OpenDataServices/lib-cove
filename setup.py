@@ -11,7 +11,9 @@ setup(
     long_description="A data review library",
     install_requires=[
         "jsonref",
-        "jsonschema>=3",
+        # jsonschema 4.10 changes how validator callables are overridden.
+        # https://github.com/python-jsonschema/jsonschema/issues/994
+        "jsonschema>=3,<4.10",
         "requests",
         "cached-property;python_version<'3.8'",
         "flattentool>=0.11.0",
