@@ -8,7 +8,6 @@ from libcove.lib.converters import convert_json, convert_spreadsheet
 
 
 def test_convert_json_1():
-
     cove_temp_folder = tempfile.mkdtemp(
         prefix="lib-cove-ocds-tests-", dir=tempfile.gettempdir()
     )
@@ -55,7 +54,6 @@ def test_convert_json_1():
 
 
 def test_convert_activity_xml_1():
-
     cove_temp_folder = tempfile.mkdtemp(
         prefix="lib-cove-iati-tests-", dir=tempfile.gettempdir()
     )
@@ -110,7 +108,6 @@ def test_convert_activity_xml_1():
 
 
 def test_convert_org_xml_1():
-
     cove_temp_folder = tempfile.mkdtemp(
         prefix="lib-cove-iati-tests-", dir=tempfile.gettempdir()
     )
@@ -166,7 +163,6 @@ def test_convert_org_xml_1():
 
 
 def test_convert_json_root_is_list_1():
-
     cove_temp_folder = tempfile.mkdtemp(
         prefix="lib-cove-ocds-tests-", dir=tempfile.gettempdir()
     )
@@ -214,7 +210,6 @@ def test_convert_json_root_is_list_1():
 
 
 def test_convert_csv_1():
-
     cove_temp_folder = tempfile.mkdtemp(
         prefix="lib-cove-ocds-tests-", dir=tempfile.gettempdir()
     )
