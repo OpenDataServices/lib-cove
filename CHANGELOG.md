@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Eliminate size limit on caching requests https://github.com/OpenDataServices/lib-cove/pull/120
+
 ### Fixed
 
 - Fix crash when tmp directory is on different filesystem https://github.com/OpenDataServices/lib-cove/issues/84

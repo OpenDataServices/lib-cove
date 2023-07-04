@@ -6,7 +6,7 @@ import requests
 from .exceptions import UnrecognisedFileType
 
 
-@lru_cache(maxsize=64)
+@lru_cache(maxsize=None)
 def cached_get_request(url):
     return requests.get(url)
 
