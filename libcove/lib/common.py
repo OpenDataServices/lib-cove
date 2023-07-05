@@ -21,7 +21,12 @@ try:
 except ImportError:
     from cached_property import cached_property
 
-from flattentool import unflatten
+# get_spreadsheet_meta_data() errors without the [flatten] requirement specifier.
+try:
+    from flattentool import unflatten
+except ImportError:
+    pass
+
 from jsonschema import FormatChecker, RefResolver
 from jsonschema._utils import ensure_list, extras_msg, find_additional_properties, uniq
 from jsonschema.exceptions import UndefinedTypeCheck, ValidationError

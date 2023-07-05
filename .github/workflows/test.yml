@@ -24,3 +24,7 @@ jobs:
         pip install 'jsonref${{ matrix.jsonref-version }}'
     - name: Test
       run: py.test tests/
+    - name: Install with flatten requirement specifier
+      run: pip install .[flatten]
+    - name: Test with flatten requirement specifier
+      run: py.test tests/

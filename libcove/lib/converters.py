@@ -4,6 +4,7 @@ import os
 import shutil
 import warnings
 
+# libcove.lib.converters is unavailable without the [flatten] requirement specifier.
 import flattentool
 from flattentool.json_input import BadlyFormedJSONError
 

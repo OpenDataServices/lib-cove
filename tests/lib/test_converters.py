@@ -3,8 +3,14 @@ import json
 import os
 import tempfile
 
+import pytest
+
 from libcove.config import LibCoveConfig
-from libcove.lib.converters import convert_json, convert_spreadsheet
+
+try:
+    from libcove.lib.converters import convert_json, convert_spreadsheet
+except ImportError:
+    pytestmark = pytest.mark.skip(reason="[flatten] requirement specifier not used")
 
 
 def test_convert_json_1():

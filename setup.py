@@ -14,12 +14,16 @@ setup(
         "jsonschema>=3",
         "requests",
         "cached-property;python_version<'3.8'",
-        "flattentool>=0.11.0",
         # Required for jsonschema to validate URIs
         "rfc3987",
         # Required for jsonschema to validate date-time
         "rfc3339-validator",
     ],
+    extras_require={
+        "flatten": [
+            "flattentool>=0.11.0",
+        ],
+    },
     classifiers=[
         "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)"
     ],
