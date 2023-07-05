@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        cove: [ 'oc4ids' , 'ocds' , 'bods']
+        cove: [ 'oc4ids' , 'ocds' ]
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v1
@@ -29,15 +29,6 @@ jobs:
         git checkout main
         cd ..
         git clone https://github.com/open-contracting/lib-cove-ocds.git
-
-    - name: bods
-      if: matrix.cove == 'bods'
-      run: |
-        git clone https://github.com/openownership/cove-bods.git
-        cd cove-bods
-        git checkout master
-        cd ..
-        git clone https://github.com/openownership/lib-cove-bods.git
 
     - name: Install
       run: |
