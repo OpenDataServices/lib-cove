@@ -13,14 +13,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Use sentence case consistently in validation error messages https://github.com/OpenDataServices/lib-cove/issues/28
 - Support jsonschema>=4.10 https://github.com/OpenDataServices/lib-cove/pull/118
 
-## Changed
-
 ## [0.30.0] - 2023-03-10
+
+### Changed
 
 - Allow jsonschema version 4.
 - Support arrays of strings that must be on a codelist https://github.com/ThreeSixtyGiving/dataquality/issues/80
 
 ## [0.29.0] - 2022-12-14
+
+### Changed
 
 - Add `SchemaJsonMixin.process_codelists` (previously only existed in lib-cove-ocds, will be used by 360 CoVE) https://github.com/OpenDataServices/lib-cove/pull/109
 
@@ -39,7 +41,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.27.0] - 2021-11-02
 
-## Added
+### Added
 
 - oneOf validator will read a new "oneOfEnumSelectorField" option in schema and use that to pick subschema.
   (Previously this worked for "statementType" only, for BODS)
@@ -50,25 +52,25 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.26.1] - 2021-10-01
 
-## Changed
+### Changed
 
 - Lock to jsonschema version 3 (we use internal tools that are not available in V4)
 
 ## [0.26.0] - 2021-09-15
 
-## Changed
+### Changed
 
 - Various performance improvements https://github.com/open-contracting/lib-cove-oc4ids/issues/23
 
 ## [0.25.0] - 2021-08-18
 
-## Added
+### Added
 
 - Add a function to calculate field coverage https://github.com/open-contracting/cove-oc4ids/issues/98
 
 ## [0.24.0] - 2021-05-20
 
-## Changed
+### Changed
 
 - Update `unique_ids` override to support multiple ids. If you called `unique_ids` with `id_name="some_id"`, you now need to call `id_names=["some_id"]`. See this lib-cove-ocds PR as an example: https://github.com/open-contracting/lib-cove-ocds/pull/91/files
 
@@ -82,7 +84,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Drop Python 3.5 support https://github.com/OpenDataServices/lib-cove/pull/81
 
-## CHanged
+### Changed
 
 - Remove unused dependencies from setup.py https://github.com/OpenDataServices/lib-cove/pull/80
 
