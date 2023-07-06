@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.31.0] - 2023-07-06
+
 ### Changed
 
 - Eliminate size limit on caching requests https://github.com/OpenDataServices/lib-cove/pull/120
