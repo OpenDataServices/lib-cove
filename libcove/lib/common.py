@@ -15,6 +15,7 @@ from urllib.request import urlopen
 import jsonref
 import jsonschema.validators
 import requests
+from referencing import Registry, Resource
 
 try:
     from functools import cached_property
@@ -22,7 +23,7 @@ except ImportError:
     from cached_property import cached_property
 
 from flattentool import unflatten
-from jsonschema import FormatChecker, RefResolver
+from jsonschema import FormatChecker
 from jsonschema._utils import ensure_list, extras_msg, find_additional_properties, uniq
 from jsonschema.exceptions import UndefinedTypeCheck, ValidationError
 
@@ -234,7 +235,9 @@ def oneOf_draft4(validator, oneOf, instance, schema):
                 context=all_errors,
             )
 
-    more_valid = [s for i, s in subschemas if validator.is_valid(instance, s)]
+    more_valid = [
+        s for i, s in subschemas if validator.evolve(schema=s).is_valid(instance)
+    ]
     if more_valid:
         more_valid.append(first_valid)
         reprs = ", ".join(repr(schema) for schema in more_valid)
@@ -846,6 +849,8 @@ def get_schema_validation_errors(
             schema_url=schema_obj.schema_host,
         )
 
+    registry = Registry(retrieve=resolver.retrieve)
+
     # Force jsonschema to use our validator.
     # https://github.com/python-jsonschema/jsonschema/issues/994
     jsonschema.validators.validates("http://json-schema.org/draft-04/schema#")(
@@ -853,7 +858,7 @@ def get_schema_validation_errors(
     )
 
     our_validator = validator(
-        pkg_schema_obj, format_checker=format_checker, resolver=resolver
+        pkg_schema_obj, format_checker=format_checker, registry=registry
     )
     for e in our_validator.iter_errors(json_data):
         message = e.message
@@ -1177,7 +1182,7 @@ def get_fields_present(*args, **kwargs):
     }
 
 
-class CustomRefResolver(RefResolver):
+class CustomRefResolver:
     """This RefResolver is only for use with the jsonschema library"""
 
     def __init__(self, *args, **kw):
@@ -1190,44 +1195,29 @@ class CustomRefResolver(RefResolver):
         # this is ignored when you supply a file
         self.schema_url = kw.pop("schema_url", "")
         self.config = kw.pop("config", "")
-        super().__init__(*args, **kw)
 
-    def resolve_remote(self, uri):
+    def retrieve(self, uri):
         schema_name = uri.split("/")[-1]
         if self.schema_file and self.file_schema_name == schema_name:
             uri = self.schema_file
         else:
             uri = urljoin(self.schema_url, schema_name)
 
-        document = self.store.get(uri)
-
-        if document:
-            return document
         if uri.startswith("http"):
             # This branch of the if-statement in-lines `RefResolver.resolve_remote()`, but using `get_request()`.
+            # https://github.com/python-jsonschema/jsonschema/blob/dbc398245a583cb2366795dc529ae042d10c1577/jsonschema/validators.py#L1008-L1023
             scheme = urlsplit(uri).scheme
-
-            if scheme in self.handlers:
-                result = self.handlers[scheme](uri)
-            elif scheme in ["http", "https"]:
-                # Requests has support for detecting the correct encoding of
-                # json over http
+            if scheme in ("http", "https"):
                 result = get_request(uri, config=self.config).json()
             else:
-                # Otherwise, pass off to urllib and assume utf-8
                 with urlopen(uri) as url:
                     result = json.loads(url.read().decode("utf-8"))
-
-            if self.cache_remote:
-                self.store[uri] = result
-            return result
         else:
             with open(uri) as schema_file:
                 result = json.load(schema_file)
 
         add_is_codelist(result)
-        self.store[uri] = result
-        return result
+        return Resource.from_contents(result)
 
 
 def _get_schema_deprecated_paths(

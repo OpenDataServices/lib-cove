@@ -7,6 +7,7 @@ from unittest import mock
 import jsonschema
 import pytest
 from freezegun import freeze_time
+from referencing.exceptions import CannotDetermineSpecification
 
 from libcove.lib.common import (
     SchemaJsonMixin,
@@ -766,7 +767,7 @@ def test_dont_error_on_decimal_in_unique_validator_key():
     assert "[Decimal('3.1')] is too short" in validation_error_json
 
 
-def test_property_that_is_not_json_schema_doesnt_raise_exception(caplog, tmpdir):
+def test_property_that_is_not_json_schema_doesnt_raise_exception(tmpdir):
     tmpdir.join("test.json").write(
         json.dumps({"properties": {"bad_property": "not_a_json_schema"}})
     )
@@ -778,12 +779,8 @@ def test_property_that_is_not_json_schema_doesnt_raise_exception(caplog, tmpdir)
         def get_pkg_schema_obj(self):
             return {"$ref": "test.json"}
 
-    validation_errors = get_schema_validation_errors({}, DummySchemaObj(), "", {}, {})
-    assert validation_errors == {}
-    assert (
-        "A 'properties' object contains a 'bad_property' value that is not a JSON Schema: 'not_a_json_schema'"
-        in caplog.text
-    )
+    with pytest.raises(CannotDetermineSpecification):
+        get_schema_validation_errors({}, DummySchemaObj(), "", {}, {})
 
 
 @pytest.mark.parametrize(
