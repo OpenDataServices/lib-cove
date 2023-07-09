@@ -833,24 +833,27 @@ def get_schema_validation_errors(
     if extra_checkers:
         format_checker.checkers.update(extra_checkers)
 
-    if getattr(schema_obj, "extended", None):
-        resolver = CustomRefResolver(
-            "",
-            pkg_schema_obj,
-            config=getattr(schema_obj, "config", None),
-            schema_url=schema_obj.schema_host,
-            schema_file=schema_obj.extended_schema_file,
-            file_schema_name=schema_obj.schema_name,
-        )
+    if hasattr(schema_obj, "registry"):
+        registry = schema_obj.registry
     else:
-        resolver = CustomRefResolver(
-            "",
-            pkg_schema_obj,
-            config=getattr(schema_obj, "config", None),
-            schema_url=schema_obj.schema_host,
-        )
+        if getattr(schema_obj, "extended", None):
+            resolver = CustomRefResolver(
+                "",
+                pkg_schema_obj,
+                config=getattr(schema_obj, "config", None),
+                schema_url=schema_obj.schema_host,
+                schema_file=schema_obj.extended_schema_file,
+                file_schema_name=schema_obj.schema_name,
+            )
+        else:
+            resolver = CustomRefResolver(
+                "",
+                pkg_schema_obj,
+                config=getattr(schema_obj, "config", None),
+                schema_url=schema_obj.schema_host,
+            )
 
-    registry = Registry(retrieve=resolver.retrieve)
+        registry = Registry(retrieve=resolver.retrieve)
 
     # Force jsonschema to use our validator.
     # https://github.com/python-jsonschema/jsonschema/issues/994
