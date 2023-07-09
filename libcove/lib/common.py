@@ -115,6 +115,7 @@ validation_error_template_lookup = {
     "number": "{}'{}' is not a number. Check that the value {} doesn’t contain any characters other than 0-9 and dot ('.'). Number values should not be in quotes. ",
     "object": "{}'{}' is not a JSON object",
     "array": "{}'{}' is not a JSON array",
+    "boolean": "{}'{}' is not a JSON boolean",
 }
 
 logger = logging.getLogger(__name__)
