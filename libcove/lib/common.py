@@ -33,33 +33,12 @@ from .tools import decimal_default, get_request
 REQUIRED_RE = re.compile(r"^'([^']+)'")
 
 
-# This function was inlined in jsonschema 4.
-def types_msg(instance, types):
-    """
-    Create an error message for a failure to match the given types.
-
-    If the ``instance`` is an object and contains a ``name`` property, it will
-    be considered to be a description of that object and used as its type.
-
-    Otherwise the message is simply the reprs of the given ``types``.
-    """
-
-    reprs = []
-    for type in types:
-        try:
-            reprs.append(repr(type["name"]))
-        except Exception:
-            reprs.append(repr(type))
-    return "%r is not of type %s" % (instance, ", ".join(reprs))
-
-
 def type_validator(validator, types, instance, schema):
     """
     Replace the jsonschema type validator to use for-loop instead of slower
     any() with generator expression.
 
     https://github.com/OpenDataServices/lib-cove/pull/66
-
     """
     types = ensure_list(types)
 
@@ -67,7 +46,8 @@ def type_validator(validator, types, instance, schema):
         if validator.is_type(instance, type):
             break
     else:
-        yield ValidationError(types_msg(instance, types))
+        reprs = ", ".join(repr(type) for type in types)
+        yield ValidationError(f"{instance!r} is not of type {reprs}")
 
 
 class TypeChecker:
