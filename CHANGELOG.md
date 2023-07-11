@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Allow `SchemaJsonMixin` classes to define a `validator` method, that accepts lib-cove's JSON Schema draft 4 validator class and its format checker, and returns a validator instance.
+
 ## [0.31.0] - 2023-07-06
 
 ### Changed
