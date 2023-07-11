@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Removed
+
+- Drop Python 3.6 support
+- Drop jsonschema 3 support
+
 ## [0.31.0] - 2023-07-06
 
 ### Changed
