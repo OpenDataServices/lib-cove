@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Calculate additional codelist values for schema using `anyOf`, like OCDS record packages https://github.com/open-contracting/lib-cove-ocds/issues/106
+
 ## [0.31.0] - 2023-07-06
 
 ### Changed
