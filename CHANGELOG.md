@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Restore jsonschema's type validator, as its performance has improved in recent Python versions https://github.com/OpenDataServices/lib-cove/pull/127
 - Allow `SchemaJsonMixin` classes to define a `validator` method, that accepts lib-cove's JSON Schema draft 4 validator class and its format checker, and returns a validator instance. https://github.com/OpenDataServices/lib-cove/pull/128
 
+### Fixed
+
+- Calculate additional codelist values for schema using `anyOf` or `oneOf`, like OCDS record packages https://github.com/open-contracting/lib-cove-ocds/issues/106
+
 ## [0.31.0] - 2023-07-06
 
 ### Changed
