@@ -8,6 +8,7 @@ import logging
 import numbers
 import os
 import re
+import shutil
 from tempfile import NamedTemporaryFile
 from urllib.parse import urljoin, urlparse, urlsplit
 from urllib.request import urlopen
@@ -725,11 +726,9 @@ def get_additional_codelist_values(schema_obj, json_data):
             path_string = "/".join(path_no_num)
 
             if path_string not in additional_codelist_values:
-
                 codelist_url = schema_obj.codelists + codelist
                 codelist_amend_urls = []
                 if hasattr(schema_obj, "extended_codelist_urls"):
-
                     # Replace URL if this codelist is overridden by an extension.
                     # Last one to be applied wins.
                     if schema_obj.extended_codelist_urls.get(codelist):
@@ -776,7 +775,6 @@ def get_additional_fields_info(json_data, schema_fields, context, fields_regex=F
     root_additional_fields = set()
 
     for field, field_info in fields_present.items():
-
         if field in schema_fields:
             continue
         if fields_regex and LANGUAGE_RE.search(field.split("/")[-1]):
@@ -809,7 +807,6 @@ def get_counts_additional_fields(
     fields_regex=False,
     additional_fields_info=None,
 ):
-
     if not additional_fields_info:
         schema_fields = schema_obj.get_pkg_schema_fields()
         additional_fields_info = get_additional_fields_info(
@@ -855,6 +852,12 @@ def get_schema_validation_errors(
             schema_url=schema_obj.schema_host,
         )
 
+    # Force jsonschema to use our validator.
+    # https://github.com/python-jsonschema/jsonschema/issues/994
+    jsonschema.validators.validates("http://json-schema.org/draft-04/schema#")(
+        validator
+    )
+
     our_validator = validator(
         pkg_schema_obj, format_checker=format_checker, resolver=resolver
     )
@@ -892,7 +895,7 @@ def get_schema_validation_errors(
             header = e.path[-1]
             if isinstance(e.path[-1], int) and len(e.path) >= 2:
                 # We're dealing with elements in an array of items at this point
-                pre_header = "Array Element "
+                pre_header = "Array element "
                 header_extra = "{}/[number]".format(e.path[-2])
 
         null_clause = ""
@@ -1005,6 +1008,13 @@ def get_schema_validation_errors(
         validation_errors[
             json.dumps(unique_validator_key, default=decimal_default)
         ].append(value)
+
+    # Restore jsonschema's default validator, to not interfere with other software.
+    # https://github.com/python-jsonschema/jsonschema/issues/994
+    jsonschema.validators.validates("http://json-schema.org/draft-04/schema#")(
+        jsonschema.validators.Draft4Validator
+    )
+
     return dict(validation_errors)
 
 
@@ -1450,7 +1460,7 @@ def get_orgids_prefixes(orgids_url=None):
         # Use a tempfile and move to create new file here for atomicity
         with NamedTemporaryFile(mode="w", delete=False) as tmp:
             json.dump(org_id_file_contents, tmp, indent=2)
-        os.rename(tmp.name, local_org_ids_file)
+        shutil.move(tmp.name, local_org_ids_file)
     # Return either the original file data, if it was found to be fresh, or the new data, if we were able to retrieve it.
     return [org_list["code"] for org_list in org_id_file_contents["lists"]]
 
