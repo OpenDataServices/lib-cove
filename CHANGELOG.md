@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Descend into nullable objects and arrays. (For example, OCDS `parties/details` is nullable, and additional codes for `parties/details/scale` were unreported.)
+
 ## [0.31.0] - 2023-07-06
 
 ### Changed

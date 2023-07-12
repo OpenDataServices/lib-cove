@@ -466,6 +466,13 @@ def schema_dict_fields_generator(schema_dict):
                     yield field
 
 
+def _get_types(value: dict):
+    types = value.get("type", [])
+    if not isinstance(types, list):
+        return [types]
+    return types
+
+
 def get_schema_codelist_paths(
     schema_obj, obj=None, current_path=(), codelist_paths=None, use_extensions=False
 ):
@@ -492,10 +499,11 @@ def get_schema_codelist_paths(
         if "codelist" in value and path not in codelist_paths:
             codelist_paths[path] = (value["codelist"], value.get("openCodelist", False))
 
-        if value.get("type") == "object":
+        types = _get_types(value)
+        if "object" in types:
             get_schema_codelist_paths(None, value, path, codelist_paths)
-        elif value.get("type") == "array" and isinstance(value.get("items"), dict):
-            if value.get("items").get("type") == "string":
+        elif "array" in types and isinstance(value.get("items"), dict):
+            if "string" in _get_types(value["items"]):
                 if "codelist" in value["items"] and path not in codelist_paths:
                     codelist_paths[path] = (
                         value["items"]["codelist"],
@@ -1279,10 +1287,11 @@ def _get_schema_deprecated_paths(
                     )
                 )
 
-        if value.get("type") == "object":
+        types = _get_types(value)
+        if "object" in types:
             _get_schema_deprecated_paths(None, value, path, deprecated_paths)
         elif (
-            value.get("type") == "array"
+            "array" in types
             and isinstance(value.get("items"), dict)
             and value.get("items").get("properties")
         ):
@@ -1324,10 +1333,11 @@ def _get_schema_non_required_ids(
         if prop == "id" and no_required_id and array_parent and not list_merge:
             id_paths.append(path)
 
-        if value.get("type") == "object":
+        types = _get_types(value)
+        if "object" in types:
             _get_schema_non_required_ids(None, value, path, id_paths)
         elif (
-            value.get("type") == "array"
+            "array" in types
             and isinstance(value.get("items"), dict)
             and value.get("items").get("properties")
         ):
@@ -1371,16 +1381,18 @@ def add_is_codelist(obj):
             )
             continue
 
+        types = _get_types(value)
+
         if "codelist" in value:
-            if "array" in value.get("type", ""):
+            if "array" in types:
                 value["items"]["isCodelist"] = True
             else:
                 value["isCodelist"] = True
 
-        if value.get("type") == "object":
+        if "object" in types:
             add_is_codelist(value)
         elif (
-            value.get("type") == "array"
+            "array" in types
             and isinstance(value.get("items"), dict)
             and value.get("items").get("properties")
         ):
