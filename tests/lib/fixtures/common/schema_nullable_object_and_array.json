@@ -1,0 +1,39 @@
+{
+    "properties": {
+        "array": {
+            "type": ["array", "null"],
+            "items": {
+                "$ref": "#/definitions/Object"
+            }
+        },
+        "object": {
+            "$ref": "#/definitions/Object"
+        }
+    },
+    "definitions": {
+        "Object": {
+            "type": ["object", "null"],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "scale": {
+                    "type": ["array", "null"],
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "small",
+                            "large"
+                        ]
+                    },
+                    "codelist": "partyScale.csv",
+                    "openCodelist": false,
+                    "deprecated": {
+                        "deprecatedVersion": "1.1",
+                        "description": ""
+                    }
+                }
+            }
+        }
+    }
+}

@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Calculate additional codelist values for schema using `anyOf` or `oneOf`, like OCDS record packages https://github.com/open-contracting/lib-cove-ocds/issues/106
+- Descend into nullable objects and arrays. (For example, OCDS `parties/details` is nullable, and additional codes for `parties/details/scale` were unreported.) https://github.com/OpenDataServices/lib-cove/pull/131
 
 ## [0.31.0] - 2023-07-06
 
