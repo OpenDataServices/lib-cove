@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Descend into nullable objects and arrays. (For example, OCDS `parties/details` is nullable, and additional codes for `parties/details/scale` were unreported.)
 
+### Removed
+
+- Dropped support for Python 3.6 & 3.7, as these are now end of life.
+
 ## [0.31.0] - 2023-07-06
 
 ### Changed
