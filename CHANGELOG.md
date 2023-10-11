@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Calculate additional codelist values for schema using `anyOf`, like OCDS record packages https://github.com/open-contracting/lib-cove-ocds/issues/106
 
+### Removed
+
+- Dropped support for Python 3.6 & 3.7, as these are now end of life.
+
 ## [0.31.0] - 2023-07-06
 
 ### Changed

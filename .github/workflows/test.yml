@@ -8,9 +8,8 @@ jobs:
         # libcove doesn't support Windows.
         # https://github.com/OpenDataServices/lib-cove/issues/53
         # We also only use Linux servers, so don't test on Mac
-        # Need to use an older Ubuntu so Python 3.6 is available
-        os: [ubuntu-20.04]
-        python-version: [ 3.6, 3.7, 3.8, 3.9, "3.10", "3.11" ]
+        os: [ubuntu-22.04]
+        python-version: [ 3.8, 3.9, "3.10", "3.11" ]
         jsonref-version: ["==0.3", ">1"]
     steps:
     - uses: actions/checkout@v2
