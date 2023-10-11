@@ -13,6 +13,7 @@ from libcove.lib.common import (
     _get_schema_deprecated_paths,
     add_field_coverage,
     add_field_coverage_percentages,
+    common_checks_context,
     fields_present_generator,
     get_additional_codelist_values,
     get_additional_fields_info,
@@ -26,6 +27,18 @@ from libcove.lib.common import (
     schema_dict_fields_generator,
     unique_ids,
 )
+
+
+def get_schema_obj(fixture):
+    schema_obj = SchemaJsonMixin()
+    schema_obj.schema_host = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "fixtures", "common/"
+    )
+    schema_obj.release_pkg_schema_name = f"{fixture}.json"
+    schema_obj.pkg_schema_url = os.path.join(
+        schema_obj.schema_host, schema_obj.release_pkg_schema_name
+    )
+    return schema_obj
 
 
 def test_unique_ids_False():
@@ -1345,5 +1358,34 @@ def test_get_additional_codelist_values():
             "isopen": False,
             "values": ["AAA"],
             "extension_codelist": False,
+        },
+    }
+
+
+def test_get_additional_codelist_values_anyOf():
+    json_data = {
+        "version": "1.1",
+        "records": [
+            {
+                "releases": [
+                    {"parties": [{"id": "1", "name": "Name", "roles": ["additional"]}]}
+                ]
+            }
+        ],
+    }
+    schema_obj = get_schema_obj("record-package-schema")
+    schema_obj.codelists = "https://raw.githubusercontent.com/open-contracting/standard/1.1/schema/codelists/"
+    additional_codelist_values = get_additional_codelist_values(schema_obj, json_data)
+
+    assert additional_codelist_values == {
+        "records/releases/parties/roles": {
+            "codelist": "partyRole.csv",
+            "codelist_amend_urls": [],
+            "codelist_url": "https://raw.githubusercontent.com/open-contracting/standard/1.1/schema/codelists/partyRole.csv",
+            "extension_codelist": False,
+            "field": "roles",
+            "isopen": True,
+            "path": "records/releases/parties",
+            "values": ["additional"],
         },
     }
