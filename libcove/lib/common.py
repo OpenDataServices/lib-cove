@@ -565,7 +565,7 @@ def custom_jsonref_jsonloader(schema_url, cache=None, **kwargs):
         uri_info = urlparse(uri)
         uri = urljoin(schema_url, os.path.basename(uri_info.path))
 
-        if "http" in uri_info.scheme:
+        if schema_url.startswith("http"):
             return get_request(uri, config=config).json(**kwargs)
         else:
             with open(uri) as schema_file:
