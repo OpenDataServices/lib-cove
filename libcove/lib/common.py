@@ -24,50 +24,13 @@ except ImportError:
 
 from flattentool import unflatten
 from jsonschema import FormatChecker, RefResolver
-from jsonschema._utils import ensure_list, extras_msg, find_additional_properties, uniq
+from jsonschema._utils import extras_msg, find_additional_properties, uniq
 from jsonschema.exceptions import UndefinedTypeCheck, ValidationError
 
 from .exceptions import cove_spreadsheet_conversion_error
 from .tools import decimal_default, get_request
 
 REQUIRED_RE = re.compile(r"^'([^']+)'")
-
-
-# This function was inlined in jsonschema 4.
-def types_msg(instance, types):
-    """
-    Create an error message for a failure to match the given types.
-
-    If the ``instance`` is an object and contains a ``name`` property, it will
-    be considered to be a description of that object and used as its type.
-
-    Otherwise the message is simply the reprs of the given ``types``.
-    """
-
-    reprs = []
-    for type in types:
-        try:
-            reprs.append(repr(type["name"]))
-        except Exception:
-            reprs.append(repr(type))
-    return "%r is not of type %s" % (instance, ", ".join(reprs))
-
-
-def type_validator(validator, types, instance, schema):
-    """
-    Replace the jsonschema type validator to use for-loop instead of slower
-    any() with generator expression.
-
-    https://github.com/OpenDataServices/lib-cove/pull/66
-
-    """
-    types = ensure_list(types)
-
-    for type in types:
-        if validator.is_type(instance, type):
-            break
-    else:
-        yield ValidationError(types_msg(instance, types))
 
 
 class TypeChecker:
@@ -97,9 +60,6 @@ class TypeChecker:
 # Otherwise we could cause conflicts with other software in the same process.
 validator = jsonschema.validators.extend(
     jsonschema.validators.Draft4Validator,
-    validators={
-        "type": type_validator,
-    },
     type_checker=TypeChecker(),
 )
 

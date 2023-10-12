@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Dropped support for Python 3.6 & 3.7, as these are now end of life.
 - Drop jsonschema 3 support
 
+### Changed
+
+- Restore jsonschema's type validator, as its performance has improved in recent Python versions https://github.com/OpenDataServices/lib-cove/pull/127
+
 ## [0.31.0] - 2023-07-06
 
 ### Changed
