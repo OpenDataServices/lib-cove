@@ -320,6 +320,8 @@ validator.VALIDATORS["additionalProperties"] = additionalProperties_extra_data
 # Properties this class might look for
 # * cache_schema, boolean. This is deprecated, use the 'cache_all_requests' option in config instead
 # * config, an instance of a config class.
+# Methods that might be looked for on this class:
+# * validator - passed validator, format_checker and returns a validator instance
 class SchemaJsonMixin:
     @cached_property
     def schema_str(self):
@@ -792,32 +794,36 @@ def get_schema_validation_errors(
     if extra_checkers:
         format_checker.checkers.update(extra_checkers)
 
-    if getattr(schema_obj, "extended", None):
-        resolver = CustomRefResolver(
-            "",
-            pkg_schema_obj,
-            config=getattr(schema_obj, "config", None),
-            schema_url=schema_obj.schema_host,
-            schema_file=schema_obj.extended_schema_file,
-            file_schema_name=schema_obj.schema_name,
-        )
-    else:
-        resolver = CustomRefResolver(
-            "",
-            pkg_schema_obj,
-            config=getattr(schema_obj, "config", None),
-            schema_url=schema_obj.schema_host,
-        )
-
     # Force jsonschema to use our validator.
     # https://github.com/python-jsonschema/jsonschema/issues/994
     jsonschema.validators.validates("http://json-schema.org/draft-04/schema#")(
         validator
     )
 
-    our_validator = validator(
-        pkg_schema_obj, format_checker=format_checker, resolver=resolver
-    )
+    if hasattr(schema_obj, "validator"):
+        our_validator = schema_obj.validator(validator, format_checker)
+    else:
+        if getattr(schema_obj, "extended", None):
+            resolver = CustomRefResolver(
+                "",
+                pkg_schema_obj,
+                config=getattr(schema_obj, "config", None),
+                schema_url=schema_obj.schema_host,
+                schema_file=schema_obj.extended_schema_file,
+                file_schema_name=schema_obj.schema_name,
+            )
+        else:
+            resolver = CustomRefResolver(
+                "",
+                pkg_schema_obj,
+                config=getattr(schema_obj, "config", None),
+                schema_url=schema_obj.schema_host,
+            )
+
+        our_validator = validator(
+            pkg_schema_obj, format_checker=format_checker, resolver=resolver
+        )
+
     for e in our_validator.iter_errors(json_data):
         message = e.message
         path = "/".join(str(item) for item in e.path)
