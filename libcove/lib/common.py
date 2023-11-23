@@ -456,17 +456,28 @@ def get_schema_codelist_paths(
         if "codelist" in value and path not in codelist_paths:
             codelist_paths[path] = (value["codelist"], value.get("openCodelist", False))
 
-        if value.get("type") == "object":
-            get_schema_codelist_paths(None, value, path, codelist_paths)
-        elif value.get("type") == "array" and isinstance(value.get("items"), dict):
-            if value.get("items").get("type") == "string":
-                if "codelist" in value["items"] and path not in codelist_paths:
-                    codelist_paths[path] = (
-                        value["items"]["codelist"],
-                        value["items"].get("openCodelist", False),
+        descendants = []
+        if "oneOf" in value and isinstance(value["oneOf"], list):
+            descendants = value["oneOf"]
+        elif "anyOf" in value and isinstance(value["anyOf"], list):
+            descendants = value["anyOf"]
+        else:
+            descendants = [value]
+
+        for value in descendants:
+            if value.get("type") == "object":
+                get_schema_codelist_paths(None, value, path, codelist_paths)
+            elif value.get("type") == "array" and isinstance(value.get("items"), dict):
+                if value.get("items").get("type") == "string":
+                    if "codelist" in value["items"] and path not in codelist_paths:
+                        codelist_paths[path] = (
+                            value["items"]["codelist"],
+                            value["items"].get("openCodelist", False),
+                        )
+                elif value.get("items").get("properties"):
+                    get_schema_codelist_paths(
+                        None, value["items"], path, codelist_paths
                     )
-            elif value.get("items").get("properties"):
-                get_schema_codelist_paths(None, value["items"], path, codelist_paths)
 
     return codelist_paths
 
