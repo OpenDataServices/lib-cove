@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Removed
+
+- Dropped support for Python 3.6 & 3.7, as these are now end of life.
+- Drop jsonschema 3 support
+
+### Changed
+
+- Restore jsonschema's type validator, as its performance has improved in recent Python versions https://github.com/OpenDataServices/lib-cove/pull/127
+- Allow `SchemaJsonMixin` classes to define a `validator` method, that accepts lib-cove's JSON Schema draft 4 validator class and its format checker, and returns a validator instance. https://github.com/OpenDataServices/lib-cove/pull/128
+
+### Fixed
+
+- Calculate additional codelist values for schema using `anyOf` or `oneOf`, like OCDS record packages https://github.com/open-contracting/lib-cove-ocds/issues/106
+- Descend into nullable objects and arrays. (For example, OCDS `parties/details` is nullable, and additional codes for `parties/details/scale` were unreported.) https://github.com/OpenDataServices/lib-cove/pull/131
+
 ## [0.31.0] - 2023-07-06
 
 ### Changed

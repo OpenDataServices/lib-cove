@@ -14,6 +14,7 @@ from libcove.lib.common import (
     _get_schema_deprecated_paths,
     add_field_coverage,
     add_field_coverage_percentages,
+    common_checks_context,
     fields_present_generator,
     get_additional_codelist_values,
     get_additional_fields_info,
@@ -22,11 +23,24 @@ from libcove.lib.common import (
     get_json_data_deprecated_fields,
     get_json_data_generic_paths,
     get_orgids_prefixes,
+    get_schema_codelist_paths,
     get_schema_validation_errors,
     org_id_file_fresh,
     schema_dict_fields_generator,
     unique_ids,
 )
+
+
+def get_schema_obj(fixture):
+    schema_obj = SchemaJsonMixin()
+    schema_obj.schema_host = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "fixtures", "common/"
+    )
+    schema_obj.release_pkg_schema_name = f"{fixture}.json"
+    schema_obj.pkg_schema_url = os.path.join(
+        schema_obj.schema_host, schema_obj.release_pkg_schema_name
+    )
+    return schema_obj
 
 
 def test_unique_ids_False():
@@ -188,15 +202,8 @@ def test_get_json_data_deprecated_fields():
     ) as fp:
         json_data_w_deprecations = json.load(fp)
 
-    schema_obj = SchemaJsonMixin()
-    schema_obj.schema_host = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), "fixtures", "common/"
-    )
-    schema_obj.release_pkg_schema_name = (
-        "release_package_schema_ref_release_schema_deprecated_fields.json"
-    )
-    schema_obj.pkg_schema_url = os.path.join(
-        schema_obj.schema_host, schema_obj.release_pkg_schema_name
+    schema_obj = get_schema_obj(
+        "release_package_schema_ref_release_schema_deprecated_fields"
     )
     json_data_paths = get_json_data_generic_paths(
         json_data_w_deprecations, generic_paths={}
@@ -294,15 +301,8 @@ def test_fields_present_10():
 
 
 def test_get_schema_deprecated_paths():
-    schema_obj = SchemaJsonMixin()
-    schema_obj.schema_host = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), "fixtures", "common/"
-    )
-    schema_obj.release_pkg_schema_name = (
-        "release_package_schema_ref_release_schema_deprecated_fields.json"
-    )
-    schema_obj.pkg_schema_url = os.path.join(
-        schema_obj.schema_host, schema_obj.release_pkg_schema_name
+    schema_obj = get_schema_obj(
+        "release_package_schema_ref_release_schema_deprecated_fields"
     )
     deprecated_paths = _get_schema_deprecated_paths(schema_obj)
     expected_results = [
@@ -1343,4 +1343,59 @@ def test_get_additional_codelist_values():
             "values": ["AAA"],
             "extension_codelist": False,
         },
+    }
+
+
+def test_get_additional_codelist_values_oneOf():
+    json_data = {"data": {"entityType": "additional"}}
+
+    schema_obj = SchemaJsonMixin()
+    schema_obj.schema_host = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "fixtures", "common/"
+    )
+    schema_obj.release_pkg_schema_name = "schema_with_oneof_codelists.json"
+    schema_obj.pkg_schema_url = os.path.join(
+        schema_obj.schema_host, schema_obj.release_pkg_schema_name
+    )
+    # Ideally we wouldn't rely on getting codelists from an external source.
+    # (Makes for faster tests with less dependencies)
+    # But load_codelist always uses requests lib, so we have to.
+    schema_obj.codelists = "https://raw.githubusercontent.com/open-contracting/standard/1.1/schema/codelists/"
+
+    additional_codelist_values = get_additional_codelist_values(schema_obj, json_data)
+
+    assert additional_codelist_values == {
+        "data/entityType": {
+            "path": "data",
+            "field": "entityType",
+            "codelist": "currency.csv",
+            "codelist_url": "https://raw.githubusercontent.com/open-contracting/standard/1.1/schema/codelists/currency.csv",
+            "codelist_amend_urls": [],
+            "isopen": False,
+            "values": ["additional"],
+            "extension_codelist": False,
+        }
+    }
+
+
+def test_nullable_objects_and_arrays(tmpdir):
+    json_data = {
+        "array": [{"scale": ["a"]}],
+        "object": {"scale": ["b"]},
+    }
+    schema_obj = get_schema_obj("schema_nullable_object_and_array")
+    context = {"file_type": "json"}
+    common_checks_context(tmpdir, json_data, schema_obj, "", context)
+
+    # _get_schema_non_required_ids
+    assert context["structure_warnings"] == {"missing_ids": ["array/0/id"]}
+
+    # _get_schema_deprecated_paths
+    assert context["deprecated_fields"] == {
+        "scale": {"explanation": ("1.1", ""), "paths": ("object",)}
+    }
+
+    assert get_schema_codelist_paths(schema_obj, json_data) == {
+        ("array", "scale"): ("partyScale.csv", False),
+        ("object", "scale"): ("partyScale.csv", False),
     }

@@ -25,50 +25,13 @@ except ImportError:
 
 from flattentool import unflatten
 from jsonschema import FormatChecker
-from jsonschema._utils import ensure_list, extras_msg, find_additional_properties, uniq
+from jsonschema._utils import extras_msg, find_additional_properties, uniq
 from jsonschema.exceptions import UndefinedTypeCheck, ValidationError
 
 from .exceptions import cove_spreadsheet_conversion_error
 from .tools import decimal_default, get_request
 
 REQUIRED_RE = re.compile(r"^'([^']+)'")
-
-
-# This function was inlined in jsonschema 4.
-def types_msg(instance, types):
-    """
-    Create an error message for a failure to match the given types.
-
-    If the ``instance`` is an object and contains a ``name`` property, it will
-    be considered to be a description of that object and used as its type.
-
-    Otherwise the message is simply the reprs of the given ``types``.
-    """
-
-    reprs = []
-    for type in types:
-        try:
-            reprs.append(repr(type["name"]))
-        except Exception:
-            reprs.append(repr(type))
-    return "%r is not of type %s" % (instance, ", ".join(reprs))
-
-
-def type_validator(validator, types, instance, schema):
-    """
-    Replace the jsonschema type validator to use for-loop instead of slower
-    any() with generator expression.
-
-    https://github.com/OpenDataServices/lib-cove/pull/66
-
-    """
-    types = ensure_list(types)
-
-    for type in types:
-        if validator.is_type(instance, type):
-            break
-    else:
-        yield ValidationError(types_msg(instance, types))
 
 
 class TypeChecker:
@@ -98,9 +61,6 @@ class TypeChecker:
 # Otherwise we could cause conflicts with other software in the same process.
 validator = jsonschema.validators.extend(
     jsonschema.validators.Draft4Validator,
-    validators={
-        "type": type_validator,
-    },
     type_checker=TypeChecker(),
 )
 
@@ -361,6 +321,8 @@ validator.VALIDATORS["additionalProperties"] = additionalProperties_extra_data
 # Properties this class might look for
 # * cache_schema, boolean. This is deprecated, use the 'cache_all_requests' option in config instead
 # * config, an instance of a config class.
+# Methods that might be looked for on this class:
+# * validator - passed validator, format_checker and returns a validator instance
 class SchemaJsonMixin:
     @cached_property
     def schema_str(self):
@@ -469,6 +431,13 @@ def schema_dict_fields_generator(schema_dict):
                     yield field
 
 
+def _get_types(value: dict):
+    types = value.get("type", [])
+    if not isinstance(types, list):
+        return [types]
+    return types
+
+
 def get_schema_codelist_paths(
     schema_obj, obj=None, current_path=(), codelist_paths=None, use_extensions=False
 ):
@@ -495,17 +464,29 @@ def get_schema_codelist_paths(
         if "codelist" in value and path not in codelist_paths:
             codelist_paths[path] = (value["codelist"], value.get("openCodelist", False))
 
-        if value.get("type") == "object":
-            get_schema_codelist_paths(None, value, path, codelist_paths)
-        elif value.get("type") == "array" and isinstance(value.get("items"), dict):
-            if value.get("items").get("type") == "string":
-                if "codelist" in value["items"] and path not in codelist_paths:
-                    codelist_paths[path] = (
-                        value["items"]["codelist"],
-                        value["items"].get("openCodelist", False),
+        descendants = []
+        if "oneOf" in value and isinstance(value["oneOf"], list):
+            descendants = value["oneOf"]
+        elif "anyOf" in value and isinstance(value["anyOf"], list):
+            descendants = value["anyOf"]
+        else:
+            descendants = [value]
+
+        for value in descendants:
+            types = _get_types(value)
+            if "object" in types:
+                get_schema_codelist_paths(None, value, path, codelist_paths)
+            elif "array" in types and isinstance(value.get("items"), dict):
+                if "string" in _get_types(value["items"]):
+                    if "codelist" in value["items"] and path not in codelist_paths:
+                        codelist_paths[path] = (
+                            value["items"]["codelist"],
+                            value["items"].get("openCodelist", False),
+                        )
+                elif value.get("items").get("properties"):
+                    get_schema_codelist_paths(
+                        None, value["items"], path, codelist_paths
                     )
-            elif value.get("items").get("properties"):
-                get_schema_codelist_paths(None, value["items"], path, codelist_paths)
 
     return codelist_paths
 
@@ -861,9 +842,13 @@ def get_schema_validation_errors(
         validator
     )
 
-    our_validator = validator(
-        pkg_schema_obj, format_checker=format_checker, registry=registry
-    )
+    if hasattr(schema_obj, "validator"):
+        our_validator = schema_obj.validator(validator, format_checker)
+    else:
+        our_validator = validator(
+            pkg_schema_obj, format_checker=format_checker, registry=registry
+        )
+
     for e in our_validator.iter_errors(json_data):
         message = e.message
         path = "/".join(str(item) for item in e.path)
@@ -1272,10 +1257,11 @@ def _get_schema_deprecated_paths(
                     )
                 )
 
-        if value.get("type") == "object":
+        types = _get_types(value)
+        if "object" in types:
             _get_schema_deprecated_paths(None, value, path, deprecated_paths)
         elif (
-            value.get("type") == "array"
+            "array" in types
             and isinstance(value.get("items"), dict)
             and value.get("items").get("properties")
         ):
@@ -1317,10 +1303,11 @@ def _get_schema_non_required_ids(
         if prop == "id" and no_required_id and array_parent and not list_merge:
             id_paths.append(path)
 
-        if value.get("type") == "object":
+        types = _get_types(value)
+        if "object" in types:
             _get_schema_non_required_ids(None, value, path, id_paths)
         elif (
-            value.get("type") == "array"
+            "array" in types
             and isinstance(value.get("items"), dict)
             and value.get("items").get("properties")
         ):
@@ -1364,16 +1351,18 @@ def add_is_codelist(obj):
             )
             continue
 
+        types = _get_types(value)
+
         if "codelist" in value:
-            if "array" in value.get("type", ""):
+            if "array" in types:
                 value["items"]["isCodelist"] = True
             else:
                 value["isCodelist"] = True
 
-        if value.get("type") == "object":
+        if "object" in types:
             add_is_codelist(value)
         elif (
-            value.get("type") == "array"
+            "array" in types
             and isinstance(value.get("items"), dict)
             and value.get("items").get("properties")
         ):
