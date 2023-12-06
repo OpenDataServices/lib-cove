@@ -814,28 +814,6 @@ def get_schema_validation_errors(
     if extra_checkers:
         format_checker.checkers.update(extra_checkers)
 
-    if hasattr(schema_obj, "registry"):
-        registry = schema_obj.registry
-    else:
-        if getattr(schema_obj, "extended", None):
-            resolver = CustomRefResolver(
-                "",
-                pkg_schema_obj,
-                config=getattr(schema_obj, "config", None),
-                schema_url=schema_obj.schema_host,
-                schema_file=schema_obj.extended_schema_file,
-                file_schema_name=schema_obj.schema_name,
-            )
-        else:
-            resolver = CustomRefResolver(
-                "",
-                pkg_schema_obj,
-                config=getattr(schema_obj, "config", None),
-                schema_url=schema_obj.schema_host,
-            )
-
-        registry = Registry(retrieve=resolver.retrieve)
-
     # Force jsonschema to use our validator.
     # https://github.com/python-jsonschema/jsonschema/issues/994
     jsonschema.validators.validates("http://json-schema.org/draft-04/schema#")(
@@ -845,6 +823,28 @@ def get_schema_validation_errors(
     if hasattr(schema_obj, "validator"):
         our_validator = schema_obj.validator(validator, format_checker)
     else:
+        if hasattr(schema_obj, "registry"):
+            registry = schema_obj.registry
+        else:
+            if getattr(schema_obj, "extended", None):
+                resolver = CustomRefResolver(
+                    "",
+                    pkg_schema_obj,
+                    config=getattr(schema_obj, "config", None),
+                    schema_url=schema_obj.schema_host,
+                    schema_file=schema_obj.extended_schema_file,
+                    file_schema_name=schema_obj.schema_name,
+                )
+            else:
+                resolver = CustomRefResolver(
+                    "",
+                    pkg_schema_obj,
+                    config=getattr(schema_obj, "config", None),
+                    schema_url=schema_obj.schema_host,
+                )
+
+            registry = Registry(retrieve=resolver.retrieve)
+
         our_validator = validator(
             pkg_schema_obj, format_checker=format_checker, registry=registry
         )
