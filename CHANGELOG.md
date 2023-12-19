@@ -10,12 +10,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Removed
 
 - Dropped support for Python 3.6 & 3.7, as these are now end of life.
-- Drop jsonschema 3 support
+- Jsonschema 4.18+ is now required. Support for 3 and older versions of 4 is removed.
 
 ### Changed
 
 - Restore jsonschema's type validator, as its performance has improved in recent Python versions https://github.com/OpenDataServices/lib-cove/pull/127
 - Allow `SchemaJsonMixin` classes to define a `validator` method, that accepts lib-cove's JSON Schema draft 4 validator class and its format checker, and returns a validator instance. https://github.com/OpenDataServices/lib-cove/pull/128
+- If the above `validator` option is not being used, allow `SchemaJsonMixin` classes to define a `registry` value. Should be a referencing.Registry instance. https://github.com/OpenDataServices/lib-cove/pull/123
 
 ### Fixed
 

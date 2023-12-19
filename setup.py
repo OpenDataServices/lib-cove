@@ -11,7 +11,8 @@ setup(
     long_description="A data review library",
     install_requires=[
         "jsonref",
-        "jsonschema>=4",
+        "jsonschema>=4.18",
+        "referencing",
         "requests",
         "cached-property;python_version<'3.8'",
         "flattentool>=0.11.0",
