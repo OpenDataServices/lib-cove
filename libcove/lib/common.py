@@ -89,6 +89,8 @@ def unique_ids(validator, ui, instance, schema, id_names=["id"]):
     if ui and validator.is_type(instance, "array"):
         non_unique_ids = set()
         all_ids = set()
+        run_uniq = False
+
         for item in instance:
             try:
                 item_ids = tuple(item.get(id_name) for id_name in id_names)
@@ -96,21 +98,21 @@ def unique_ids(validator, ui, instance, schema, id_names=["id"]):
                 # if item is not a dict
                 item_ids = None
             if item_ids and all(
-                item_id is not None
-                and not isinstance(item_id, list)
-                and not isinstance(item_id, dict)
+                item_id is not None and not isinstance(item_id, (dict, list))
                 for item_id in item_ids
             ):
                 if item_ids in all_ids:
                     non_unique_ids.add(item_ids)
                 all_ids.add(item_ids)
             else:
-                if not uniq(instance):
-                    msg = "Array has non-unique elements"
-                    err = ValidationError(msg, instance=instance)
-                    err.error_id = "uniqueItems_no_ids"
-                    yield err
-                    return
+                run_uniq = True
+
+        if run_uniq and not uniq(instance):
+            msg = "Array has non-unique elements"
+            err = ValidationError(msg, instance=instance)
+            err.error_id = "uniqueItems_no_ids"
+            yield err
+            return
 
         for non_unique_id in sorted(non_unique_ids):
             if len(id_names) == 1:
