@@ -52,13 +52,6 @@ jobs:
         cd cove-${{ matrix.cove }}
         DJANGO_SETTINGS_MODULE=cove_project.settings py.test
 
-    - name: lib-cove-ocds requirements
-      if: matrix.cove == 'ocds'
-      run: |
-        # Upgrade Django for lib-cove-ocds tests, as they rely on some details
-        # of entity quoting that have changed
-        pip install --upgrade Django
-
     - name: Test cove lib instance
       run: |
         cd lib-cove-${{ matrix.cove }}
