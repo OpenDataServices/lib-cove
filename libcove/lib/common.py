@@ -89,7 +89,7 @@ def unique_ids(validator, ui, instance, schema, id_names=["id"]):
     if ui and validator.is_type(instance, "array"):
         non_unique_ids = set()
         all_ids = set()
-        run_uniq = False
+        uniq_has_run = False
 
         for item in instance:
             try:
@@ -104,15 +104,14 @@ def unique_ids(validator, ui, instance, schema, id_names=["id"]):
                 if item_ids in all_ids:
                     non_unique_ids.add(item_ids)
                 all_ids.add(item_ids)
-            else:
-                run_uniq = True
-
-        if run_uniq and not uniq(instance):
-            msg = "Array has non-unique elements"
-            err = ValidationError(msg, instance=instance)
-            err.error_id = "uniqueItems_no_ids"
-            yield err
-            return
+            elif not uniq_has_run:
+                if not uniq(instance):
+                    msg = "Array has non-unique elements"
+                    err = ValidationError(msg, instance=instance)
+                    err.error_id = "uniqueItems_no_ids"
+                    yield err
+                    return
+                uniq_has_run = True
 
         for non_unique_id in sorted(non_unique_ids):
             if len(id_names) == 1:
