@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.32.1] - 2024-06-28
+
+### Fixed
+
+- `unique_ids` now doesn't have exponential running time if there's no ID fields https://github.com/OpenDataServices/lib-cove/pull/144
+
 ## [0.32.0] - 2023-12-19
 
 ### Removed
