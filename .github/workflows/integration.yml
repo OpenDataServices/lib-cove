@@ -26,6 +26,9 @@ jobs:
     - name: Install
       run: |
         pip install -r requirements_dev.txt
+        # Temporary fix so we don't try to install libcove from a non-existent
+        # branch
+        sed -i '/=libcove/d' cove-${{ matrix.cove}}/requirements_dev.txt
         pip install -r cove-${{ matrix.cove }}/requirements_dev.txt
         # Make sure we're using local libs rather than one brought in
         # via requirements.
