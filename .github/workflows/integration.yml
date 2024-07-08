@@ -21,14 +21,19 @@ jobs:
       run: |
         git clone https://github.com/open-contracting/cove-${{ matrix.cove }}.git
         git clone https://github.com/open-contracting/lib-cove-${{ matrix.cove }}.git
+        git clone https://github.com/OpenDataServices/lib-cove-web.git
 
     - name: Install
       run: |
         pip install -r requirements_dev.txt
+        # Temporary fix so we don't try to install libcove from a non-existent
+        # branch
+        sed -i '/=libcove/d' cove-${{ matrix.cove}}/requirements_dev.txt
         pip install -r cove-${{ matrix.cove }}/requirements_dev.txt
         # Make sure we're using local libs rather than one brought in
         # via requirements.
         pip install -e ./lib-cove-${{ matrix.cove }}/
+        pip install -e ./lib-cove-web
         pip install -e .
         pip list
 
