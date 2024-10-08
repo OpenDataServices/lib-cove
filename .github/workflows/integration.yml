@@ -48,7 +48,7 @@ jobs:
     - name: Test cove instance
       run: |
         cd cove-${{ matrix.cove }}
-        DJANGO_SETTINGS_MODULE=cove_project.settings py.test
+        DJANGO_SETTINGS_MODULE=core.settings py.test
 
     - name: Test cove lib instance
       run: |
