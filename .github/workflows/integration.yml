@@ -48,6 +48,7 @@ jobs:
     - name: Test cove instance
       run: |
         cd cove-${{ matrix.cove }}
+        ./manage.py collectstatic --noinput -v2
         DJANGO_SETTINGS_MODULE=core.settings py.test
 
     - name: Test cove lib instance
