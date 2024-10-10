@@ -1183,18 +1183,23 @@ def common_fixtures(filename):
 
 def test_get_field_coverage_oc4ids():
     # Compare the actual json output, to ensure order is the same
-    assert (
-        json.dumps(
-            get_field_coverage(
-                schema_obj_from_str(
-                    open(common_fixtures("oc4ids_project-schema_0__9__2.json")).read()
+    with open(
+        common_fixtures("oc4ids_example_coverage.json")
+    ) as schema_file_with_coverage, open(
+        common_fixtures("oc4ids_project-schema_0__9__2.json")
+    ) as schema_file, open(
+        common_fixtures("oc4ids_example.json")
+    ) as data_file:
+        assert (
+            json.dumps(
+                get_field_coverage(
+                    schema_obj_from_str(schema_file.read()),
+                    json.load(data_file)["projects"],
                 ),
-                json.load(open(common_fixtures("oc4ids_example.json")))["projects"],
-            ),
-            indent=2,
+                indent=2,
+            )
+            == schema_file_with_coverage.read()
         )
-        == open(common_fixtures("oc4ids_example_coverage.json")).read()
-    )
 
 
 @pytest.mark.parametrize(
